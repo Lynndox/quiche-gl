@@ -1,0 +1,10 @@
+[package]
+name = "quiche-gl"
+version = "0.0.1"
+authors = ["Lynndox <lynndoxxy@gmail.com>"]
+edition = "2021"
+test = false
+bench = false
+
+[dependencies]
+aarch64-cpu = "10.0.0"
