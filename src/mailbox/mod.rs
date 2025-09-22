@@ -2,6 +2,7 @@ use core::ops::{Deref, DerefMut};
 
 mod error;
 pub mod message;
+mod raw;
 mod tags;
 
 pub use error::*;
@@ -9,49 +10,7 @@ pub use tags::*;
 
 use crate::Align16;
 
-const MAIL_BASE: u32 = 0x3F00B880;
 const MBOX_REQUEST: u32 = 0;
-
-#[repr(C)]
-struct Mailbox {
-    read: *const u32,
-    _unused: u32,
-    _unused2: u32,
-    _unused3: u32,
-    poll: u32,
-    sender: u32,
-    status: *const u32,
-    config: u32,
-    write: *mut u32,
-}
-
-impl Mailbox {
-    fn is_empty(&self) -> bool {
-        self.status() == MailboxStatus::Empty
-    }
-
-    fn status(&self) -> u32 {
-        unsafe { ::core::ptr::read_volatile(self.status) }
-    }
-}
-
-/// Get a reference to the [`Mailbox`].
-///
-/// # Safety
-///
-/// The caller must ensure that only one core is accessing the mailbox at a time.
-const unsafe fn mailbox() -> &'static Mailbox {
-    unsafe { &*(MAIL_BASE as *const Mailbox) }
-}
-
-/// Get a mutable reference to the [`Mailbox`].
-///
-/// # Safety
-///
-/// The caller must ensure that only one core is accessing the mailbox at a time.
-const unsafe fn mailbox_mut() -> &'static mut Mailbox {
-    unsafe { &mut *(MAIL_BASE as *mut Mailbox) }
-}
 
 #[repr(transparent)]
 pub struct Message<const LEN: usize> {
@@ -71,6 +30,16 @@ impl<const LEN: usize> Message<LEN> {
         }
     }
 
+    /// Obtain a reference to the inner message.
+    pub fn inner(&self) -> &MessageInner<LEN> {
+        self.inner.deref()
+    }
+
+    /// Obtain a mutable reference to the inner message.
+    pub fn inner_mut(&mut self) -> &mut MessageInner<LEN> {
+        self.inner.deref_mut()
+    }
+
     /// Sends a message to the mailbox.
     ///
     /// # Safety
@@ -80,22 +49,26 @@ impl<const LEN: usize> Message<LEN> {
     ///
     /// It is the caller's responsibility to ensure that only one thread is using the mailbox at a
     /// time.
-    pub unsafe fn send(&self, channel: Channel) -> Result<(), MailboxError> {
-        todo!()
-    }
-}
+    pub unsafe fn send(&mut self, channel: Channel) -> Result<(), MailboxError> {
+        let mailbox_addr = ((&raw const *self.inner) as u32 & !0x0F) | channel as u32;
+        let mailbox = raw::mailbox();
 
-impl<const LEN: usize> Deref for Message<LEN> {
-    type Target = MessageInner<LEN>;
+        // TODO: spin loop bad. replace this with interrupts or something
+        while mailbox.is_full() {
+            core::hint::spin_loop();
+        }
 
-    fn deref(&self) -> &Self::Target {
-        self.inner.deref()
-    }
-}
+        mailbox.write(mailbox_addr);
 
-impl<const LEN: usize> DerefMut for Message<LEN> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.inner.deref_mut()
+        loop {
+            // TODO: again, spin loop bad. replace this with interrupts or something
+            while mailbox.is_empty() {
+                core::hint::spin_loop();
+            }
+            if mailbox.read() == mailbox_addr {
+                return self.inner.response();
+            }
+        }
     }
 }
 
@@ -117,6 +90,21 @@ impl<const LEN: usize> MessageInner<LEN> {
             response: MBOX_REQUEST,
             tags,
         }
+    }
+
+    pub(crate) fn response(&self) -> Result<(), MailboxError> {
+        match self.request_status() {
+            RequestStatus::Request => Err(MailboxError::SendMessage(
+                "Message still contains a request?!",
+            )),
+            // TODO: check error response and return a more useful error here
+            RequestStatus::Error => Err(MailboxError::SendMessage("Response contains an error.")),
+            RequestStatus::Success => Ok(()),
+        }
+    }
+
+    pub(crate) fn request_status(&self) -> RequestStatus {
+        RequestStatus::from(self.response)
     }
 }
 
@@ -155,19 +143,18 @@ impl PartialEq<MailboxStatus> for u32 {
 
 #[repr(u32)]
 #[derive(PartialEq, Eq, Copy, Clone)]
-pub enum ReqResp {
-    ResponseSuccessful = 0x00000000,
-    ResponseError = 0x80000000,
+pub enum RequestStatus {
+    Success = 0x00000000,
+    Error = 0x80000000,
     Request = 0x80000001,
 }
 
-impl From<u32> for ReqResp {
+impl From<u32> for RequestStatus {
     fn from(val: u32) -> Self {
-        use ReqResp::*;
         match val {
-            0x00000000 => Request,
-            0x80000000 => ResponseSuccessful,
-            _ => ResponseError,
+            0x00000000 => Self::Request,
+            0x80000000 => Self::Success,
+            _ => Self::Error,
         }
     }
 }

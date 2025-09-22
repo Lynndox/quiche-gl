@@ -1,6 +1,6 @@
 use super::*;
-pub const fn init_framebuffer(width: u32, height: u32, bit_depth: u32) -> MessageInner<25> {
-    MessageInner::new_with_tags([
+pub const fn init_framebuffer(width: u32, height: u32, bit_depth: u32) -> Message<25> {
+    Message::new_with_tags([
         // Sequence Of Concatenated Tags
         // Tag Identifier
         Tag::SetPhysicalDisplay,
@@ -55,8 +55,8 @@ pub const fn init_framebuffer(width: u32, height: u32, bit_depth: u32) -> Messag
     ])
 }
 
-pub const fn enable_qpu(clock_rate_mhz: u32) -> MessageInner<10> {
-    MessageInner::new_with_tags([
+pub const fn enable_qpu(clock_rate_mhz: u32) -> Message<10> {
+    Message::new_with_tags([
         Tag::SetClockRate,
         // Value Buffer Size In Bytes
         0x00000008,
