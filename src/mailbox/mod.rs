@@ -10,6 +10,10 @@ pub use tags::*;
 
 use crate::Align16;
 
+// FIXME: this shouldn't be a constant, but passed in by the user somehow, since
+// if the mailbox address has been remapped by the MMU, this will break.
+const MAIL_BASE: u32 = 0x3F00B880;
+
 const MBOX_REQUEST: u32 = 0;
 
 #[repr(transparent)]
@@ -51,7 +55,7 @@ impl<const LEN: usize> Message<LEN> {
     /// time.
     pub unsafe fn send(&mut self, channel: Channel) -> Result<(), MailboxError> {
         let mailbox_addr = ((&raw const *self.inner) as u32 & !0x0F) | channel as u32;
-        let mailbox = raw::mailbox();
+        let mailbox = raw::unmapped_mailbox();
 
         // TODO: spin loop bad. replace this with interrupts or something
         while mailbox.is_full() {

@@ -1,9 +1,7 @@
 use super::MailboxStatus;
 
-const MAIL_BASE: u32 = 0x3F00B880;
-
 #[repr(C)]
-pub struct Mailbox {
+pub struct RawMailbox {
     read: *const u32,
     _unused: u32,
     _unused2: u32,
@@ -15,7 +13,7 @@ pub struct Mailbox {
     write: *mut u32,
 }
 
-impl Mailbox {
+impl RawMailbox {
     pub fn read(&self) -> u32 {
         unsafe { ::core::ptr::read_volatile(self.read) }
     }
@@ -44,6 +42,15 @@ impl Mailbox {
 /// # Safety
 ///
 /// The caller must ensure that only one core is accessing the mailbox at a time.
-pub const unsafe fn mailbox() -> &'static Mailbox {
-    unsafe { &*(MAIL_BASE as *const Mailbox) }
+pub const unsafe fn unmapped_mailbox() -> &'static RawMailbox {
+    unsafe { &*(super::MAIL_BASE as *const RawMailbox) }
+}
+
+/// Get a reference to the [`Mailbox`].
+///
+/// # Safety
+///
+/// The caller must ensure that only one core is accessing the mailbox at a time.
+pub const unsafe fn mailbox(addr: usize) -> &'static RawMailbox {
+    unsafe { &*(addr as *const RawMailbox) }
 }
