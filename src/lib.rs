@@ -1,7 +1,9 @@
 #![no_std]
 
 mod align;
+mod consts;
 mod error;
+mod register;
 
 pub mod control_list;
 pub mod display;
