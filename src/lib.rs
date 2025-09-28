@@ -17,12 +17,12 @@ pub mod prelude {
     pub use super::display::*;
 }
 
-const QPU_BUS_ADDR: u32 = 0x3FFFFFFF;
+const VC_BUS_ADDR: u32 = 0x3FFFFFFF;
 
-pub fn gpu_to_arm_addr(value: u32) -> usize {
-    (value & QPU_BUS_ADDR) as usize
+pub fn bus_to_arm_addr(value: u32) -> usize {
+    (value & VC_BUS_ADDR) as usize
 }
 
-pub fn arm_to_gpu_addr(value: u32) -> usize {
-    (value | !QPU_BUS_ADDR) as usize
+pub fn arm_to_bus_addr(value: u32) -> usize {
+    (value | !VC_BUS_ADDR) as usize
 }
