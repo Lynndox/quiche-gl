@@ -6,6 +6,7 @@ mod error;
 pub mod control_list;
 pub mod display;
 pub mod mailbox;
+pub mod primitive;
 pub mod shader;
 
 pub use align::*;
