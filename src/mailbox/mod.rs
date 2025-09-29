@@ -21,6 +21,12 @@ pub struct Message<const LEN: usize> {
     inner: Align16<MessageInner<LEN>>,
 }
 
+impl<const LEN: usize> Default for Message<LEN> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const LEN: usize> Message<LEN> {
     pub const fn new() -> Self {
         Self {
@@ -55,7 +61,7 @@ impl<const LEN: usize> Message<LEN> {
     /// time.
     pub unsafe fn send(&mut self, channel: Channel) -> Result<(), MailboxError> {
         let mailbox_addr = ((&raw const *self.inner) as u32 & !0x0F) | channel as u32;
-        let mailbox = raw::unmapped_mailbox();
+        let mailbox = unsafe { raw::unmapped_mailbox() };
 
         // TODO: spin loop bad. replace this with interrupts or something
         while mailbox.is_full() {

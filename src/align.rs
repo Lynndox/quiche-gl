@@ -16,7 +16,7 @@ impl<T> Align16<T> {
 
     /// Obtain a reference to the inner wrapped [`T`].
     pub fn inner(&self) -> &T {
-        &*self
+        self
     }
 
     /// Consumes [`self`], returning the inner wrapped [`T`].
