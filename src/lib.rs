@@ -10,7 +10,7 @@ mod register;
 pub mod control_list;
 pub mod display;
 pub mod mailbox;
-pub mod primitive;
+pub mod nv;
 pub mod shader;
 
 pub use align::*;

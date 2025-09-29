@@ -1,6 +1,6 @@
 use crate::Align16;
 
-use super::nv::FixedVec2;
+use super::FixedVec2;
 
 #[repr(C, packed)]
 pub struct ShadedVertex<T> {

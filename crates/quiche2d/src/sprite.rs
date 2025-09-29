@@ -1,6 +1,6 @@
 use fixed::FixedI16;
-use gl::primitive::nv::FixedVec2;
-use gl::primitive::{ShadedVertex, TextureCoords};
+use gl::nv::primitive::FixedVec2;
+use gl::nv::primitive::{ShadedVertex, TextureCoords};
 
 #[repr(C)]
 pub struct Sprite {
