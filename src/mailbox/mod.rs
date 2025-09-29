@@ -76,7 +76,7 @@ impl<const LEN: usize> Message<LEN> {
                 core::hint::spin_loop();
             }
             if mailbox.read() == mailbox_addr {
-                return self.inner.response();
+                return unsafe { self.inner.response() };
             }
         }
     }
@@ -102,8 +102,8 @@ impl<const LEN: usize> MessageInner<LEN> {
         }
     }
 
-    pub(crate) fn response(&self) -> Result<(), MailboxError> {
-        match self.request_status() {
+    pub(crate) unsafe fn response(&self) -> Result<(), MailboxError> {
+        match unsafe { self.request_status() } {
             RequestStatus::Request => Err(MailboxError::SendMessage(
                 "Message still contains a request?!",
             )),
@@ -113,8 +113,9 @@ impl<const LEN: usize> MessageInner<LEN> {
         }
     }
 
-    pub(crate) fn request_status(&self) -> RequestStatus {
-        RequestStatus::from(self.response)
+    pub(crate) unsafe fn request_status(&self) -> RequestStatus {
+        let response = unsafe { core::ptr::read_volatile(&raw const self.response) };
+        RequestStatus::from(response)
     }
 }
 
