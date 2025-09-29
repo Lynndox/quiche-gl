@@ -1,5 +1,5 @@
 #![allow(unused)]
-#![no_std]
+// #![no_std]
 
 mod align;
 mod consts;
@@ -27,6 +27,6 @@ pub fn bus_to_arm_addr(value: u32) -> usize {
     (value & VC_BUS_ADDR) as usize
 }
 
-pub fn arm_to_bus_addr(value: u32) -> usize {
-    (value | !VC_BUS_ADDR) as usize
+pub fn arm_to_bus_addr(value: usize) -> u32 {
+    (value as u32 | !VC_BUS_ADDR)
 }

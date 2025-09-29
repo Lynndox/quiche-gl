@@ -8,6 +8,19 @@ pub struct Align16<T> {
     inner: T,
 }
 
+impl<T> Clone for Align16<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+impl<T> Copy for Align16<T> where T: Copy {}
+
 impl<T> Align16<T> {
     /// Wrap [`T`] to align it to a 16 byte boundary.
     pub const fn new(inner: T) -> Self {
