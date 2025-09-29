@@ -1,8 +1,8 @@
 #[repr(C, packed)]
 #[derive(Clone, Copy)]
 pub struct PixelCoords {
-    x: PixelCoord,
-    y: PixelCoord,
+    pub x: PixelCoord,
+    pub y: PixelCoord,
 }
 
 impl PixelCoords {
@@ -35,16 +35,6 @@ impl PixelCoords {
     /// converted to [`PixelCoord`]s.
     pub fn from_coords(x: PixelCoord, y: PixelCoord) -> Self {
         Self { x, y }
-    }
-
-    /// Returns the `x` component of self.
-    pub fn x(&self) -> PixelCoord {
-        self.x
-    }
-
-    /// Returns the `y` component of self.
-    pub fn y(&self) -> PixelCoord {
-        self.y
     }
 }
 
