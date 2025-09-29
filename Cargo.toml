@@ -10,3 +10,4 @@ bench = false
 
 [dependencies]
 aarch64-cpu = "10.0.0"
+fixed = { workspace = true }
