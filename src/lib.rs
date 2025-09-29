@@ -4,6 +4,7 @@
 mod align;
 mod consts;
 mod error;
+mod framebuffer;
 mod register;
 
 pub mod control_list;
@@ -14,6 +15,7 @@ pub mod shader;
 
 pub use align::*;
 pub use error::*;
+pub use framebuffer::*;
 
 pub type Result<T, E = Error> = core::result::Result<T, E>;
 
