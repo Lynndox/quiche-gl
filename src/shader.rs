@@ -1,15 +1,15 @@
 use core::ops::Deref;
 
 #[repr(C, align(16))]
-pub struct Shader<'a>(&'a [u32]);
+pub struct ShaderCode<'a>(&'a [u32]);
 
-impl<'a> Shader<'a> {
-    pub const fn new(data: &'a [u32]) -> Self {
-        Self(data)
+impl<'a> ShaderCode<'a> {
+    pub const fn new(code: &'a [u32]) -> Self {
+        Self(code)
     }
 }
 
-impl Deref for Shader<'_> {
+impl Deref for ShaderCode<'_> {
     type Target = [u32];
 
     fn deref(&self) -> &Self::Target {
@@ -18,7 +18,7 @@ impl Deref for Shader<'_> {
 }
 
 /// A simple fragment shader for rendering a textured triangle(?) to get you started.
-pub const TEXTURE_FRAG_SHADER: Shader<'static> = Shader::new(&[
+pub const TEXTURE_FRAG_SHADER: ShaderCode<'static> = ShaderCode::new(&[
     // Tex S: ACC0 = S * W (R15A)
     // Add Op: No Operation, Add Cond: Never
     // Mul Pipe: Floating Point Multiply, ACC0, R15, VARYING_READ, Cond: Always
