@@ -168,7 +168,7 @@ mod tests {
     #[test]
     fn test_qpu_enable() {
         let qpu_en = EnableQpu::message(250);
-        assert_eq!(qpu_en.size(), 12 * 4);
+        assert_eq!(qpu_en.size(), 12);
         const EXPECTED: &[u32] = &[
             12,
             0,
