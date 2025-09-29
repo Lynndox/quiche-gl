@@ -1,17 +1,17 @@
 use crate::Align16;
 
-use super::nv::PixelCoord;
+use super::nv::FixedVec2;
 
 #[repr(C, packed)]
-pub struct Vertex<T> {
-    location: PixelCoord,
+pub struct ShadedVertex<T> {
+    location: FixedVec2,
     z: f32,
     w: f32,
     data: T,
 }
 
-impl<T> Vertex<T> {
-    pub fn new(location: PixelCoord, z: f32, w: f32, data: T) -> Self {
+impl<T> ShadedVertex<T> {
+    pub fn new(location: FixedVec2, z: f32, w: f32, data: T) -> Self {
         Self {
             location,
             z,
@@ -21,7 +21,7 @@ impl<T> Vertex<T> {
     }
 }
 
-impl<T: Clone> Clone for Vertex<T> {
+impl<T: Clone> Clone for ShadedVertex<T> {
     fn clone(&self) -> Self {
         let data = unsafe { core::ptr::read_unaligned(&raw const self.data) };
         Self {
@@ -33,7 +33,13 @@ impl<T: Clone> Clone for Vertex<T> {
     }
 }
 
-impl<T: Copy> Copy for Vertex<T> {}
+impl<T: Copy> Copy for ShadedVertex<T> {}
+
+pub struct Color {
+    r: f32,
+    g: f32,
+    b: f32,
+}
 
 #[repr(C, packed)]
 pub struct TextureCoords {

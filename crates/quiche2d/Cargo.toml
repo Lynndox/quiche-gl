@@ -10,7 +10,7 @@ bench = false
 
 [dependencies]
 fixed = { workspace = true }
-glam = { version = "0.30.8", default-features = false, features = ["nostd-libm"] }
+glam = { workspace = true }
 quiche-gl = { path = "../../" }
 
 [features]

@@ -3,6 +3,7 @@ resolver = "3"
 members = ["crates/*"]
 
 [workspace.dependencies]
+glam = { version = "0.30.8", default-features = false, features = ["nostd-libm"] }
 fixed = "1.29.0"
 
 [package]
@@ -18,3 +19,9 @@ bench = false
 [dependencies]
 aarch64-cpu = "10.0.0"
 fixed = { workspace = true }
+glam = { workspace = true, optional = true }
+
+[features]
+default = ["glam"]
+glam = ["dep:glam"]
+glam-fast-math = ["glam/fast-math"]
