@@ -1,7 +1,7 @@
 use core::ops::{Deref, DerefMut};
 
 mod error;
-pub mod message;
+pub mod messages;
 mod raw;
 mod tags;
 
@@ -9,6 +9,7 @@ pub use error::*;
 pub use tags::*;
 
 use crate::Align16;
+use crate::mailbox::messages::*;
 
 // FIXME: this shouldn't be a constant, but passed in by the user somehow, since
 // if the mailbox address has been remapped by the MMU, this will break.
