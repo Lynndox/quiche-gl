@@ -1,12 +1,14 @@
 use super::*;
 use crate::Result;
 
+#[repr(transparent)]
 pub struct FramebufferInit {
     message: Message<25>,
-    channel: Channel,
 }
 
 impl FramebufferInit {
+    const CHANNEL: Channel = Channel::Prop;
+
     pub fn message(width: u32, height: u32, bit_depth: u32, double_buffer: bool) -> Self {
         let virt_width = if double_buffer { width * 2 } else { width };
         let message = Message::new_with_tags([
@@ -63,15 +65,12 @@ impl FramebufferInit {
             Tag::End,
         ]);
 
-        Self {
-            message,
-            channel: Channel::Prop,
-        }
+        Self { message }
     }
 
     pub fn send(&mut self) -> Result<()> {
         unsafe {
-            self.message.send(self.channel)?;
+            self.message.send(Self::CHANNEL)?;
         }
         Ok(())
     }
@@ -113,12 +112,14 @@ impl Deref for FramebufferInit {
     }
 }
 
+#[repr(transparent)]
 pub struct EnableQpu {
     message: Message<10>,
-    channel: Channel,
 }
 
 impl EnableQpu {
+    const CHANNEL: Channel = Channel::Prop;
+
     pub fn message(clock_rate_mhz: u32) -> Self {
         let message = Message::new_with_tags([
             Tag::SetClockRate,
@@ -141,15 +142,12 @@ impl EnableQpu {
             // 0x0 (End Tag)
             Tag::End,
         ]);
-        Self {
-            message,
-            channel: Channel::Prop,
-        }
+        Self { message }
     }
 
     pub unsafe fn send(mut self) -> Result<()> {
         unsafe {
-            self.message.send(self.channel)?;
+            self.message.send(Self::CHANNEL)?;
         }
         Ok(())
     }
@@ -160,5 +158,76 @@ impl Deref for EnableQpu {
 
     fn deref(&self) -> &Self::Target {
         &self.message
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_qpu_enable() {
+        let qpu_en = EnableQpu::message(250);
+        assert_eq!(qpu_en.size(), 12 * 4);
+        const EXPECTED: &[u32] = &[
+            12,
+            0,
+            Tag::SetClockRate,
+            0x8,
+            0x8,
+            Clock::V3D,
+            250 * 1000 * 1000,
+            Tag::EnableQpu,
+            0x4,
+            0x4,
+            1,
+            0,
+        ];
+
+        let raw_msg =
+            unsafe { core::slice::from_raw_parts(&raw const qpu_en as *const u32, qpu_en.size()) };
+
+        assert_eq!(raw_msg, EXPECTED);
+    }
+
+    #[test]
+    fn test_fb_init() {
+        let msg = FramebufferInit::message(640, 480, 32, false);
+        assert_eq!(msg.size(), 27);
+
+        const EXPECTED: &[u32] = &[
+            27,
+            0,
+            Tag::SetPhysicalDisplay,
+            0x8,
+            0x8,
+            640,
+            480,
+            Tag::SetVirtualResolution,
+            0x8,
+            0x8,
+            640,
+            480,
+            Tag::SetBitDepth,
+            0x4,
+            0x4,
+            32,
+            Tag::SetVirtualOffset,
+            0x8,
+            0x8,
+            0,
+            0,
+            Tag::AllocateBuffer,
+            0x8,
+            0x8,
+            0,
+            0,
+            0,
+        ];
+
+        let raw_msg =
+            unsafe { core::slice::from_raw_parts(&raw const msg as *const u32, msg.size()) };
+
+        assert_eq!(raw_msg, EXPECTED);
     }
 }

@@ -12,7 +12,7 @@ authors = ["Lynndox <lynndoxxy@gmail.com>"]
 edition = "2024"
 
 [lib]
-test = false
+# test = false
 bench = false
 
 [dependencies]

@@ -81,6 +81,10 @@ impl<const LEN: usize> Message<LEN> {
             }
         }
     }
+
+    const fn size(&self) -> usize {
+        LEN + 2
+    }
 }
 
 #[repr(C, packed)]
