@@ -1,3 +1,4 @@
+#![allow(unused)]
 #![no_std]
 
 mod align;
