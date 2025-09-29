@@ -18,6 +18,7 @@ bench = false
 
 [dependencies]
 aarch64-cpu = "10.0.0"
+bitflags = "2.9.4"
 fixed = { workspace = true }
 glam = { workspace = true, optional = true }
 
