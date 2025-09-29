@@ -1,0 +1,18 @@
+[package]
+name = "quiche2d"
+version = "0.0.1"
+authors = ["Lynndox <lynndoxxy@gmail.com>"]
+edition = "2024"
+
+[lib]
+test = false
+bench = false
+
+[dependencies]
+fixed = { workspace = true }
+glam = { version = "0.30.8", default-features = false, features = ["nostd-libm"] }
+quiche-gl = { path = "../../" }
+
+[features]
+default = []
+fast-math = ["glam/fast-math"]
