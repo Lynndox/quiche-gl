@@ -166,7 +166,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_qpu_enable() {
+    fn qpu_enable_message() {
         let qpu_en = EnableQpu::message(250);
         assert_eq!(qpu_en.size(), 12);
         const EXPECTED: &[u32] = &[
@@ -191,7 +191,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fb_init() {
+    fn fb_init_message() {
         let msg = FramebufferInit::message(640, 480, 32, false);
         assert_eq!(msg.size(), 27);
 
