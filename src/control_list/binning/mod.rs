@@ -4,7 +4,7 @@ pub use flags::*;
 use super::ControlCode;
 
 #[repr(C, packed)]
-pub struct TileBinningControlList {
+pub struct TileBinningControlList<P: GLPrimitives> {
     bin_mode_config_code: u8,
     bin_mode_config: TileBinningModeConfig,
     start_tile_binning: u8,
@@ -16,19 +16,19 @@ pub struct TileBinningControlList {
     viewport_offset: ViewportOffset,
     nv_shader_state_code: u8,
     nv_shader_state_addr: u32,
-    indexed_list_code: u8,
-    indexed_list: IndexedPrimitiveList,
+    primitives_code: u8,
+    primitives: P,
     flush: u8,
 }
 
-impl TileBinningControlList {
+impl<P: GLPrimitives> TileBinningControlList<P> {
     pub fn new(
         bin_mode_config: TileBinningModeConfig,
         clip_window: ClipWindowConfig,
         bin_config: TileBinningConfig,
         viewport_offset: ViewportOffset,
         nv_shader_state_addr: u32,
-        indexed_list: IndexedPrimitiveList,
+        primitives: P,
     ) -> Self {
         Self {
             bin_mode_config_code: ControlCode::TileBinningModeConfiguration,
@@ -42,8 +42,8 @@ impl TileBinningControlList {
             viewport_offset,
             nv_shader_state_code: ControlCode::NVShaderState,
             nv_shader_state_addr,
-            indexed_list_code: ControlCode::IndexedPrimitiveList,
-            indexed_list,
+            primitives_code: P::FLAG,
+            primitives,
             flush: ControlCode::Flush,
         }
     }
@@ -100,4 +100,12 @@ pub struct IndexedPrimitiveList {
     pub address: u32,
     /// Maximum Index (Bit 72..103)
     pub max_index: u32,
+}
+
+pub trait GLPrimitives {
+    const FLAG: u8;
+}
+
+impl GLPrimitives for IndexedPrimitiveList {
+    const FLAG: u8 = ControlCode::IndexedPrimitiveList;
 }
