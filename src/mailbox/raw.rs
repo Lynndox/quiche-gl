@@ -3,9 +3,7 @@ use super::MailboxStatus;
 #[repr(C)]
 pub struct RawMailbox {
     read: *const u32,
-    _unused: u32,
-    _unused2: u32,
-    _unused3: u32,
+    _unused: [u32; 3],
     poll: u32,
     sender: u32,
     status: *const u32,

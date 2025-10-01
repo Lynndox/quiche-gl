@@ -1,12 +1,9 @@
-use core::ops::{Deref, DerefMut};
-
 mod error;
 pub mod messages;
 mod raw;
-mod tags;
+pub mod tag;
 
 pub use error::*;
-pub use tags::*;
 
 use crate::Align16;
 use crate::mailbox::messages::*;
@@ -15,40 +12,81 @@ use crate::mailbox::messages::*;
 // if the mailbox address has been remapped by the MMU, this will break.
 const MAIL_BASE: u32 = 0x3F00B880;
 
-const MBOX_REQUEST: u32 = 0;
+// I don't like this, and I don't like how messy this has become
+// but idk what to do about it rn so it's like this
+
+pub trait MailboxChannel: Sealed {
+    const CHANNEL: Channel;
+}
+
+trait MailboxMessage: Sealed {
+    fn status(&self) -> crate::mailbox::RequestStatus;
+    fn size(&self) -> u32 {
+        (core::mem::size_of_val(self) / 4) as u32
+    }
+    unsafe fn as_bytes(&self) -> &[u32] {
+        unsafe { core::slice::from_raw_parts(&raw const *self as *const u32, self.size() as _) }
+    }
+}
+
+impl<T: MailboxChannel> Sealed for MessageBatchInner<T> {}
+impl<T: MailboxChannel> MailboxMessage for MessageBatchInner<T> {
+    fn status(&self) -> crate::mailbox::RequestStatus {
+        crate::mailbox::RequestStatus::from(unsafe {
+            ::core::ptr::read_volatile(&raw const self.status)
+        })
+    }
+}
 
 #[repr(transparent)]
-pub struct Message<const LEN: usize> {
-    inner: Align16<MessageInner<LEN>>,
+pub struct MessageBatch<T: MailboxChannel> {
+    inner: Align16<MessageBatchInner<T>>,
 }
 
-impl<const LEN: usize> Default for Message<LEN> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<const LEN: usize> Message<LEN> {
-    pub const fn new() -> Self {
+impl<T: MailboxChannel> MessageBatch<T> {
+    pub const fn new(message: T) -> Self {
         Self {
-            inner: Align16::new(MessageInner::new()),
+            inner: Align16::new(MessageBatchInner::new(message)),
         }
     }
 
-    pub const fn new_with_tags(tags: [u32; LEN]) -> Self {
-        Self {
-            inner: Align16::new(MessageInner::new_with_tags(tags)),
+    pub fn inner(&self) -> &T {
+        &self.inner.message
+    }
+}
+
+impl<T: MailboxChannel> core::ops::Deref for MessageBatch<T> {
+    type Target = MessageBatchInner<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.inner
+    }
+}
+
+impl<T: MailboxChannel> core::ops::DerefMut for MessageBatch<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut *self.inner
+    }
+}
+#[repr(C)]
+pub struct MessageBatchInner<T: MailboxChannel> {
+    size: u32,
+    status: u32,
+    message: T,
+    end_tag: u32,
+}
+
+impl<T: MailboxChannel> MessageBatchInner<T> {
+    pub const fn new(message: T) -> Self {
+        const {
+            assert!(((core::mem::size_of::<Self>() / 4) - 1) <= u32::MAX as usize);
         }
-    }
-
-    /// Obtain a reference to the inner message.
-    pub fn inner(&self) -> &MessageInner<LEN> {
-        self.inner.deref()
-    }
-
-    /// Obtain a mutable reference to the inner message.
-    pub fn inner_mut(&mut self) -> &mut MessageInner<LEN> {
-        self.inner.deref_mut()
+        Self {
+            size: (core::mem::size_of::<Self>() / 4) as u32,
+            status: 0,
+            message,
+            end_tag: 0,
+        }
     }
 
     /// Sends a message to the mailbox.
@@ -60,8 +98,8 @@ impl<const LEN: usize> Message<LEN> {
     ///
     /// It is the caller's responsibility to ensure that only one thread is using the mailbox at a
     /// time.
-    pub unsafe fn send(&mut self, channel: Channel) -> Result<(), MailboxError> {
-        let mailbox_addr = ((&raw const *self.inner) as u32 & !0x0F) | channel as u32;
+    pub unsafe fn send(&mut self) -> Result<(), MailboxError> {
+        let mailbox_addr = ((&raw const *self) as u32 & !0x0F) | T::CHANNEL as u32;
         let mailbox = unsafe { raw::unmapped_mailbox() };
 
         // TODO: spin loop bad. replace this with interrupts or something
@@ -77,50 +115,18 @@ impl<const LEN: usize> Message<LEN> {
                 core::hint::spin_loop();
             }
             if mailbox.read() == mailbox_addr {
-                return unsafe { self.inner.response() };
+                return match self.status() {
+                    RequestStatus::Request => Err(MailboxError::SendMessage(
+                        "Message still contains a request?!",
+                    )),
+                    // TODO: check error response and return a more useful error here
+                    RequestStatus::Error => {
+                        Err(MailboxError::SendMessage("Response contains an error."))
+                    }
+                    RequestStatus::Success => Ok(()),
+                };
             }
         }
-    }
-
-    const fn size(&self) -> usize {
-        LEN + 2
-    }
-}
-
-#[repr(C, packed)]
-pub struct MessageInner<const LEN: usize> {
-    size: u32,
-    response: u32,
-    tags: [u32; LEN],
-}
-
-impl<const LEN: usize> MessageInner<LEN> {
-    pub(crate) const fn new() -> Self {
-        Self::new_with_tags([0u32; LEN])
-    }
-
-    pub(crate) const fn new_with_tags(tags: [u32; LEN]) -> Self {
-        Self {
-            size: (LEN + 2) as u32,
-            response: MBOX_REQUEST,
-            tags,
-        }
-    }
-
-    pub(crate) unsafe fn response(&self) -> Result<(), MailboxError> {
-        match unsafe { self.request_status() } {
-            RequestStatus::Request => Err(MailboxError::SendMessage(
-                "Message still contains a request?!",
-            )),
-            // TODO: check error response and return a more useful error here
-            RequestStatus::Error => Err(MailboxError::SendMessage("Response contains an error.")),
-            RequestStatus::Success => Ok(()),
-        }
-    }
-
-    pub(crate) unsafe fn request_status(&self) -> RequestStatus {
-        let response = unsafe { core::ptr::read_volatile(&raw const self.response) };
-        RequestStatus::from(response)
     }
 }
 
@@ -160,9 +166,9 @@ impl PartialEq<MailboxStatus> for u32 {
 #[repr(u32)]
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum RequestStatus {
-    Success = 0x00000000,
-    Error = 0x80000000,
-    Request = 0x80000001,
+    Request = 0x00000000,
+    Success = 0x80000000,
+    Error = 0x80000001,
 }
 
 impl From<u32> for RequestStatus {
@@ -173,4 +179,9 @@ impl From<u32> for RequestStatus {
             _ => Self::Error,
         }
     }
+}
+
+use sealed::Sealed;
+mod sealed {
+    pub trait Sealed {}
 }

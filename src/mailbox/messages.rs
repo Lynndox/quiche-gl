@@ -1,163 +1,81 @@
+use super::tag::*;
 use super::*;
 use crate::Result;
 
-#[repr(transparent)]
-pub struct FramebufferInit {
-    message: Message<25>,
+macro_rules! trait_impl {
+    ($($n:ident, $channel:path),* $(,)?) => {
+        $(
+            impl $crate::mailbox::Sealed for $n {}
+            impl $crate::mailbox::MailboxChannel for $n {
+                const CHANNEL: Channel = $channel;
+            }
+        )*
+    };
 }
 
-impl FramebufferInit {
-    const CHANNEL: Channel = Channel::Prop;
+trait_impl! {
+    InitFramebuffer, Channel::Prop,
+    InitQpu, Channel::Prop,
+}
 
-    pub fn message(width: u32, height: u32, bit_depth: u32, double_buffer: bool) -> Self {
+#[repr(C)]
+pub struct InitFramebuffer {
+    pub(crate) phys_display: SetPhysicalDisplay,
+    pub(crate) virt_res: SetVirtualResolution,
+    pub(crate) bit_depth: SetBitDepth,
+    pub(crate) virt_offset: SetVirtualOffset,
+    pub(crate) alloc_buffer: AllocateBuffer,
+}
+
+impl InitFramebuffer {
+    pub const fn new(width: u32, height: u32, bit_depth: u32, double_buffer: bool) -> Self {
+        const {
+            assert!(core::mem::size_of::<Self>() <= (u32::MAX as usize));
+        }
+
         let virt_width = if double_buffer { width * 2 } else { width };
-        let message = Message::new_with_tags([
-            // Sequence Of Concatenated Tags
-            // Tag Identifier
-            Tag::SetPhysicalDisplay,
-            // Value Buffer Size In Bytes
-            0x00000008,
-            // 1 bit (MSB) Request/Response Indicator (0=Request, 1=Response), 31 bits (LSB) Value Length In Bytes
-            0x00000008,
-            // Value Buffer
-            width,
-            // Value Buffer
-            height,
-            // Tag Identifier
-            Tag::SetVirtualResolution,
-            // Value Buffer Size In Bytes
-            0x00000008,
-            // 1 bit (MSB) Request/Response Indicator (0=Request, 1=Response), 31 bits (LSB) Value Length In Bytes
-            0x00000008,
-            // Value Buffer
-            virt_width,
-            // Value Buffer
-            height,
-            // Tag Identifier
-            Tag::SetBitDepth,
-            // Value Buffer Size In Bytes
-            0x00000004,
-            // 1 bit (MSB) Request/Response Indicator (0=Request, 1=Response), 31 bits (LSB) Value Length In Bytes
-            0x00000004,
-            // Value Buffer
-            bit_depth,
-            // Tag Identifier
-            Tag::SetVirtualOffset,
-            // Value Buffer Size In Bytes
-            0x00000008,
-            // 1 bit (MSB) Request/Response Indicator (0=Request, 1=Response), 31 bits (LSB) Value Length In Bytes
-            0x00000008,
-            // Value Buffer
-            0,
-            // Value Buffer
-            0,
-            // Tag Identifier
-            Tag::AllocateBuffer,
-            // Value Buffer Size In Bytes
-            0x00000008,
-            // 1 bit (MSB) Request/Response Indicator (0=Request, 1=Response), 31 bits (LSB) Value Length In Bytes
-            0x00000008,
-            // Value Buffer
-            0,
-            // Value Buffer
-            0,
-            // 0x0 (End Tag)
-            Tag::End,
-        ]);
 
-        Self { message }
-    }
-
-    pub fn send(&mut self) -> Result<()> {
-        unsafe {
-            self.message.send(Self::CHANNEL)?;
+        Self {
+            phys_display: SetPhysicalDisplay::new(width, height),
+            virt_res: SetVirtualResolution::new(virt_width, height),
+            bit_depth: SetBitDepth::new(bit_depth),
+            virt_offset: SetVirtualOffset::new(0, 0),
+            alloc_buffer: AllocateBuffer::new(),
         }
-        Ok(())
     }
 
-    pub fn phys_width(&self) -> u32 {
-        self.read_buf(3)
-    }
-
-    pub fn phys_height(&self) -> u32 {
-        self.read_buf(4)
-    }
-
-    pub fn virt_width(&self) -> u32 {
-        self.read_buf(8)
-    }
-
-    pub fn virt_height(&self) -> u32 {
-        self.read_buf(9)
-    }
-
-    pub fn bit_depth(&self) -> u32 {
-        self.read_buf(13)
-    }
-
-    pub fn buf_ptr(&self) -> u32 {
-        self.read_buf(22)
-    }
-
-    fn read_buf(&self, offset: usize) -> u32 {
-        unsafe { core::ptr::read_volatile(&raw const self.message.inner().tags[offset]) }
+    pub const fn message(
+        width: u32,
+        height: u32,
+        bit_depth: u32,
+        double_buffer: bool,
+    ) -> MessageBatch<Self> {
+        MessageBatch::new(Self::new(width, height, bit_depth, double_buffer))
     }
 }
 
-impl Deref for FramebufferInit {
-    type Target = Message<25>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.message
+impl InitFramebuffer {
+    pub fn buffer_ptr(&self) -> u32 {
+        unsafe { core::ptr::read_volatile(&raw const self.alloc_buffer.base_addr) }
     }
 }
 
-#[repr(transparent)]
-pub struct EnableQpu {
-    message: Message<10>,
+#[repr(C, packed)]
+pub struct InitQpu {
+    clock_rate: SetClockRate,
+    enable_qpu: EnableQpu,
 }
 
-impl EnableQpu {
-    const CHANNEL: Channel = Channel::Prop;
-
-    pub fn message(clock_rate_mhz: u32) -> Self {
-        let message = Message::new_with_tags([
-            Tag::SetClockRate,
-            // Value Buffer Size In Bytes
-            0x00000008,
-            // 1 bit (MSB) Request/Response Indicator (0=Request, 1=Response), 31 bits (LSB) Value Length In Bytes
-            0x00000008,
-            // Value Buffer (V3D Clock ID)
-            Clock::V3D,
-            // Value Buffer (250MHz)
-            clock_rate_mhz * 1000 * 1000,
-            // Tag Identifier
-            Tag::EnableQpu,
-            // Value Buffer Size In Bytes
-            0x00000004,
-            // 1 bit (MSB) Request/Response Indicator (0=Request, 1=Response), 31 bits (LSB) Value Length In Bytes
-            0x00000004,
-            // Value Buffer (1 = Enable)
-            1,
-            // 0x0 (End Tag)
-            Tag::End,
-        ]);
-        Self { message }
-    }
-
-    pub unsafe fn send(mut self) -> Result<()> {
-        unsafe {
-            self.message.send(Self::CHANNEL)?;
+impl InitQpu {
+    pub const fn new(clock_rate_mhz: u32) -> Self {
+        Self {
+            clock_rate: SetClockRate::new(Clock::V3D, clock_rate_mhz * 1_000 * 1_000),
+            enable_qpu: EnableQpu::new(true),
         }
-        Ok(())
     }
-}
 
-impl Deref for EnableQpu {
-    type Target = Message<10>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.message
+    pub const fn message(clock_rate_mhz: u32) -> MessageBatch<Self> {
+        MessageBatch::new(Self::new(clock_rate_mhz))
     }
 }
 
@@ -167,67 +85,100 @@ mod tests {
 
     #[test]
     fn qpu_enable_message() {
-        let qpu_en = EnableQpu::message(250);
-        assert_eq!(qpu_en.size(), 12);
+        let qpu_en = InitQpu::message(250);
         const EXPECTED: &[u32] = &[
             12,
             0,
             Tag::SetClockRate,
             0x8,
-            0x8,
+            0x0,
             Clock::V3D,
             250 * 1000 * 1000,
             Tag::EnableQpu,
             0x4,
-            0x4,
+            0x0,
             1,
             0,
         ];
 
-        let raw_msg =
-            unsafe { core::slice::from_raw_parts(&raw const qpu_en as *const u32, qpu_en.size()) };
-
-        assert_eq!(raw_msg, EXPECTED);
+        assert_eq!(unsafe { qpu_en.as_bytes() }, EXPECTED);
     }
 
     #[test]
-    fn fb_init_message() {
-        let msg = FramebufferInit::message(640, 480, 32, false);
-        assert_eq!(msg.size(), 27);
-
+    fn fb_init_struct() {
         const EXPECTED: &[u32] = &[
             27,
             0,
             Tag::SetPhysicalDisplay,
             0x8,
-            0x8,
+            0x0,
             640,
             480,
             Tag::SetVirtualResolution,
             0x8,
-            0x8,
+            0x0,
             640,
             480,
             Tag::SetBitDepth,
             0x4,
-            0x4,
+            0x0,
             32,
             Tag::SetVirtualOffset,
             0x8,
-            0x8,
+            0x0,
             0,
             0,
             Tag::AllocateBuffer,
             0x8,
-            0x8,
+            0x0,
             0,
             0,
             0,
         ];
 
-        let raw_msg =
-            unsafe { core::slice::from_raw_parts(&raw const msg as *const u32, msg.size()) };
+        let msg = InitFramebuffer::message(640, 480, 32, false);
+        assert_eq!(unsafe { msg.as_bytes() }, EXPECTED);
+    }
 
-        assert_eq!(raw_msg, EXPECTED);
+    #[test]
+    fn tag_structs() {
+        let pd_tag = &[Tag::SetPhysicalDisplay, 0x8, 0x0, 640, 480];
+        let vr_tag = &[Tag::SetVirtualResolution, 0x8, 0x0, 640, 480];
+        let bd_tag = &[Tag::SetBitDepth, 0x4, 0x0, 32];
+        let vo_tag = &[Tag::SetVirtualOffset, 0x8, 0x0, 0, 0];
+        let ab_tag = &[Tag::AllocateBuffer, 0x8, 0x0, 0, 0];
+
+        let pd_s = SetPhysicalDisplay::new(640, 480);
+        let vr_s = SetVirtualResolution::new(640, 480);
+        let bd_s = SetBitDepth::new(32);
+        let vo_s = SetVirtualOffset::new(0, 0);
+        let ab_s = AllocateBuffer::new();
+
+        assert_eq!(
+            core::mem::size_of_val(pd_tag),
+            core::mem::size_of_val(&pd_s)
+        );
+        assert_eq!(
+            core::mem::size_of_val(vr_tag),
+            core::mem::size_of_val(&vr_s)
+        );
+        assert_eq!(
+            core::mem::size_of_val(bd_tag),
+            core::mem::size_of_val(&bd_s)
+        );
+        assert_eq!(
+            core::mem::size_of_val(vo_tag),
+            core::mem::size_of_val(&vo_s)
+        );
+        assert_eq!(
+            core::mem::size_of_val(ab_tag),
+            core::mem::size_of_val(&ab_s)
+        );
+
+        assert_eq!(pd_tag, unsafe { pd_s.as_bytes() });
+        assert_eq!(vr_tag, unsafe { vr_s.as_bytes() });
+        assert_eq!(bd_tag, unsafe { bd_s.as_bytes() });
+        assert_eq!(vo_tag, unsafe { vo_s.as_bytes() });
+        assert_eq!(ab_tag, unsafe { ab_s.as_bytes() });
     }
 }

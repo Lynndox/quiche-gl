@@ -1,3 +1,6 @@
+mod tags;
+pub use tags::*;
+
 pub struct Tag;
 
 #[allow(dead_code, non_upper_case_globals)]
