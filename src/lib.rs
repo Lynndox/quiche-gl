@@ -5,6 +5,7 @@ mod align;
 mod consts;
 mod error;
 mod framebuffer;
+mod mem;
 mod register;
 
 pub mod control_list;
