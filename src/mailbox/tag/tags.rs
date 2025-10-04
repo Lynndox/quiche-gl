@@ -1,22 +1,15 @@
 use crate::mailbox::Channel;
 
-// macro_rules! trait_impl {
-//     ($n:ident) => {
-//         impl $crate::mailbox::Sealed for $n {}
-//         impl $crate::mailbox::MailboxMessage for $n {
-//             fn status(&self) -> $crate::mailbox::RequestStatus {
-//                 $crate::mailbox::RequestStatus::from(unsafe {
-//                     ::core::ptr::read_volatile(&raw const self.status)
-//                 })
-//             }
-//         }
-//     };
-// }
-
 macro_rules! tag_impl {
-    (@traitimpl $n:ident) => {
+    (@traitimpl $n:ident $channel:path) => {
 	impl $crate::mailbox::Sealed for $n {}
+	impl $crate::mailbox::MailboxChannel for $n {
+	    const CHANNEL: Channel = $channel;
+	}
         impl $crate::mailbox::MailboxMessage for $n {
+	    fn channel(&self) -> $crate::mailbox::Channel {
+		<Self as $crate::mailbox::MailboxChannel>::CHANNEL
+	    }
             fn status(&self) -> $crate::mailbox::RequestStatus {
                 $crate::mailbox::RequestStatus::from(unsafe {
                     ::core::ptr::read_volatile(&raw const self.status)
@@ -35,7 +28,7 @@ macro_rules! tag_impl {
     };
     (@argty $t:ty) => { $t };
     (@argty) => { u32 };
-    ($($n:ident { size = $size:literal, $($v:ident $(: $t:ty)?),* $(,)? } $(,)?),*) => {
+    ($($n:ident { channel = $channel:path, size = $size:literal, $($v:ident $(: $t:ty)?),* $(,)? } $(,)?),*) => {
 	$(
 	tag_impl!(@makestruct $n { $($v),* });
 	impl $n {
@@ -48,7 +41,7 @@ macro_rules! tag_impl {
 		}
 	    }
 	}
-	tag_impl!(@traitimpl $n);
+	tag_impl!(@traitimpl $n $channel);
 	)*
     };
 }
@@ -56,10 +49,10 @@ macro_rules! tag_impl {
 macro_rules! tag_impl_noinput {
     (@val $val:literal) => { $val };
     (@val) => { 0 };
-    ($($n:ident { size = $size:literal$(, $($v:ident $(= $val:literal)?),*)? $(,)? } $(,)?),*) => {
+    ($($n:ident { channel = $channel:path, size = $size:literal$(, $($v:ident $(= $val:literal)?),*)? $(,)? } $(,)?),*) => {
 	$(
 	tag_impl!(@makestruct $n { $($($v),*),* });
-	tag_impl!(@traitimpl $n);
+	tag_impl!(@traitimpl $n $channel);
 	impl $n {
 	    pub const fn new() -> Self {
 		Self {
@@ -70,19 +63,24 @@ macro_rules! tag_impl_noinput {
 		}
 	    }
 	}
-	)*
+
+	impl Default for $n {
+	    fn default() -> Self {
+		Self::new()
+	    }
+	})*
     };
 }
 
 tag_impl! {
-    SetPhysicalDisplay { size = 8, width, height },
-    SetVirtualResolution { size = 8, width, height },
-    SetBitDepth { size = 4, bit_depth },
-    SetVirtualOffset { size = 8, offset_x, offset_y },
-    SetClockRate { size = 8, clock, rate_mhz },
-    EnableQpu { size = 4, enable: bool }
+    SetPhysicalDisplay { channel = Channel::Prop, size = 8, width, height },
+    SetVirtualResolution { channel = Channel::Prop, size = 8, width, height },
+    SetBitDepth { channel = Channel::Prop, size = 4, bit_depth },
+    SetVirtualOffset { channel = Channel::Prop, size = 8, offset_x, offset_y },
+    SetClockRate { channel = Channel::Prop, size = 8, clock, rate_mhz },
+    EnableQpu { channel = Channel::Prop, size = 4, enable: bool }
 }
 
 tag_impl_noinput! {
-    AllocateBuffer { size = 8, base_addr, buf_size },
+    AllocateBuffer { channel = Channel::Prop, size = 8, base_addr, buf_size },
 }

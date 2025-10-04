@@ -1,6 +1,6 @@
 use super::tag::*;
 use super::*;
-use crate::Result;
+use crate::{Result, align16};
 
 macro_rules! trait_impl {
     ($($n:ident, $channel:path),* $(,)?) => {
@@ -49,8 +49,13 @@ impl InitFramebuffer {
         height: u32,
         bit_depth: u32,
         double_buffer: bool,
-    ) -> MessageBatch<Self> {
-        MessageBatch::new(Self::new(width, height, bit_depth, double_buffer))
+    ) -> Align16<MessageBatch<Self>> {
+        align16!(MessageBatch::new(Self::new(
+            width,
+            height,
+            bit_depth,
+            double_buffer
+        )))
     }
 }
 
@@ -74,8 +79,8 @@ impl InitQpu {
         }
     }
 
-    pub const fn message(clock_rate_mhz: u32) -> MessageBatch<Self> {
-        MessageBatch::new(Self::new(clock_rate_mhz))
+    pub const fn message(clock_rate_mhz: u32) -> Align16<MessageBatch<Self>> {
+        align16!(MessageBatch::new(Self::new(clock_rate_mhz)))
     }
 }
 

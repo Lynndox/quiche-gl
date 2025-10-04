@@ -3,6 +3,7 @@
 
 mod align;
 mod consts;
+mod context;
 mod error;
 mod framebuffer;
 mod mem;
@@ -15,6 +16,7 @@ pub mod nv;
 pub mod shader;
 
 pub use align::*;
+pub use context::*;
 pub use error::*;
 pub use framebuffer::*;
 
@@ -31,5 +33,12 @@ pub fn bus_to_arm_addr(value: u32) -> usize {
 }
 
 pub fn arm_to_bus_addr(value: usize) -> u32 {
-    (value as u32 | !VC_BUS_ADDR)
+    value as u32 | !VC_BUS_ADDR
+}
+
+#[macro_export]
+macro_rules! align16 {
+    ($($t:tt)*) => {
+        $crate::align::Align16::new($($t)*)
+    };
 }

@@ -9,6 +9,14 @@ impl From<crate::mailbox::MailboxError> for Error {
     }
 }
 
+impl From<core::convert::Infallible> for Error {
+    fn from(_value: core::convert::Infallible) -> Self {
+        unreachable!(
+            "This exploded somewhere that was supposed to be infalliable. Someone has done something very nasty."
+        )
+    }
+}
+
 impl core::error::Error for Error {}
 
 impl core::fmt::Display for Error {

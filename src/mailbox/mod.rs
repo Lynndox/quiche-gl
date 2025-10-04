@@ -1,6 +1,6 @@
 mod error;
 pub mod messages;
-mod raw;
+pub(crate) mod raw;
 pub mod tag;
 
 pub use error::*;
@@ -10,7 +10,7 @@ use crate::mailbox::messages::*;
 
 // FIXME: this shouldn't be a constant, but passed in by the user somehow, since
 // if the mailbox address has been remapped by the MMU, this will break.
-const MAIL_BASE: u32 = 0x3F00B880;
+pub(crate) const MAIL_BASE: u32 = 0x3F00B880;
 
 // I don't like this, and I don't like how messy this has become
 // but idk what to do about it rn so it's like this
@@ -19,18 +19,29 @@ pub trait MailboxChannel: Sealed {
     const CHANNEL: Channel;
 }
 
-trait MailboxMessage: Sealed {
+pub trait MailboxMessage: Sealed {
+    fn channel(&self) -> Channel;
     fn status(&self) -> crate::mailbox::RequestStatus;
     fn size(&self) -> u32 {
         (core::mem::size_of_val(self) / 4) as u32
     }
+
+    /// Gets the raw bytes that make up this struct.
+    ///
+    /// # Safety
+    ///
+    /// With great power comes great responsibility. You should not use this unless you have a very
+    /// good reason to.
     unsafe fn as_bytes(&self) -> &[u32] {
         unsafe { core::slice::from_raw_parts(&raw const *self as *const u32, self.size() as _) }
     }
 }
 
-impl<T: MailboxChannel> Sealed for MessageBatchInner<T> {}
-impl<T: MailboxChannel> MailboxMessage for MessageBatchInner<T> {
+impl<T: MailboxChannel> Sealed for MessageBatch<T> {}
+impl<T: MailboxChannel> MailboxMessage for MessageBatch<T> {
+    fn channel(&self) -> Channel {
+        T::CHANNEL
+    }
     fn status(&self) -> crate::mailbox::RequestStatus {
         crate::mailbox::RequestStatus::from(unsafe {
             ::core::ptr::read_volatile(&raw const self.status)
@@ -38,53 +49,23 @@ impl<T: MailboxChannel> MailboxMessage for MessageBatchInner<T> {
     }
 }
 
-#[repr(transparent)]
-pub struct MessageBatch<T: MailboxChannel> {
-    inner: Align16<MessageBatchInner<T>>,
-}
-
-impl<T: MailboxChannel> MessageBatch<T> {
-    pub const fn new(message: T) -> Self {
-        Self {
-            inner: Align16::new(MessageBatchInner::new(message)),
-        }
-    }
-
-    pub fn inner(&self) -> &T {
-        &self.inner.message
-    }
-}
-
-impl<T: MailboxChannel> core::ops::Deref for MessageBatch<T> {
-    type Target = MessageBatchInner<T>;
-
-    fn deref(&self) -> &Self::Target {
-        &*self.inner
-    }
-}
-
-impl<T: MailboxChannel> core::ops::DerefMut for MessageBatch<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut *self.inner
-    }
-}
 #[repr(C)]
-pub struct MessageBatchInner<T: MailboxChannel> {
+pub struct MessageBatch<T: MailboxChannel> {
     size: u32,
     status: u32,
-    message: T,
+    messages: T,
     end_tag: u32,
 }
 
-impl<T: MailboxChannel> MessageBatchInner<T> {
-    pub const fn new(message: T) -> Self {
+impl<T: MailboxChannel> MessageBatch<T> {
+    pub const fn new(messages: T) -> Self {
         const {
             assert!(((core::mem::size_of::<Self>() / 4) - 1) <= u32::MAX as usize);
         }
         Self {
             size: (core::mem::size_of::<Self>() / 4) as u32,
             status: 0,
-            message,
+            messages,
             end_tag: 0,
         }
     }
@@ -127,6 +108,14 @@ impl<T: MailboxChannel> MessageBatchInner<T> {
                 };
             }
         }
+    }
+}
+
+impl<T: MailboxChannel> core::ops::Deref for MessageBatch<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.messages
     }
 }
 

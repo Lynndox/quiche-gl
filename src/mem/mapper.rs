@@ -8,9 +8,9 @@ pub unsafe trait MemoryMapper {
     type Error;
 
     /// Translates a physical address to the virtual address space.
-    fn phys_to_virt_addr(addr: usize) -> Result<usize, Self::Error>;
+    fn phys_to_virt_addr(&self, addr: usize) -> Result<usize, Self::Error>;
     /// Translates physical addresses to the MMU's kernel address space.
-    fn virt_to_phys_addr(addr: usize) -> Result<usize, Self::Error>;
+    fn virt_to_phys_addr(&self, addr: usize) -> Result<usize, Self::Error>;
 }
 
 /// A dummy implementation of a [`MemoryMapper`] that returns the address as-is.
@@ -27,11 +27,11 @@ pub struct IdentityMapper;
 unsafe impl MemoryMapper for IdentityMapper {
     type Error = core::convert::Infallible;
 
-    fn phys_to_virt_addr(addr: usize) -> Result<usize, Self::Error> {
+    fn phys_to_virt_addr(&self, addr: usize) -> Result<usize, Self::Error> {
         Ok(addr)
     }
 
-    fn virt_to_phys_addr(addr: usize) -> Result<usize, Self::Error> {
+    fn virt_to_phys_addr(&self, addr: usize) -> Result<usize, Self::Error> {
         Ok(addr)
     }
 }
