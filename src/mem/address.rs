@@ -63,6 +63,16 @@ impl BusAddress {
     pub const fn with_channel(mut self, channel: Channel) -> Self {
         BusAddress((self.0 & !0xF) | channel as u32)
     }
+
+    /// Creates an instance of self from a const pointer.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that this is a **physical address**, along with all the
+    /// other normal Rust memory safety guarantees.
+    pub unsafe fn from_ptr<T>(ptr: *const T) -> Self {
+        Self((ptr as usize) as u32)
+    }
 }
 
 impl Deref for BusAddress {

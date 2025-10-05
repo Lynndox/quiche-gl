@@ -6,12 +6,12 @@ mod consts;
 mod context;
 mod error;
 mod framebuffer;
-mod mem;
 mod register;
 
 pub mod control_list;
 pub mod display;
 pub mod mailbox;
+pub mod mem;
 pub mod nv;
 pub mod shader;
 
@@ -28,13 +28,13 @@ pub mod prelude {
 
 const VC_BUS_ADDR: u32 = 0x3FFFFFFF;
 
-pub fn bus_to_arm_addr(value: u32) -> usize {
-    (value & VC_BUS_ADDR) as usize
-}
-
-pub fn arm_to_bus_addr(value: usize) -> u32 {
-    value as u32 | !VC_BUS_ADDR
-}
+// pub fn bus_to_arm_addr(value: u32) -> usize {
+//     (value & VC_BUS_ADDR) as usize
+// }
+//
+// pub fn arm_to_bus_addr(value: usize) -> u32 {
+//     value as u32 | !VC_BUS_ADDR
+// }
 
 #[macro_export]
 macro_rules! align16 {

@@ -1,4 +1,5 @@
 use fixed::FixedI16;
+use gl::mem::BusAddress;
 use gl::nv::primitive::FixedVec2;
 use gl::nv::primitive::{ShadedVertex, TextureCoords};
 
@@ -6,12 +7,12 @@ use gl::nv::primitive::{ShadedVertex, TextureCoords};
 pub struct Sprite {
     quad: [ShadedVertex<TextureCoords>; 4],
     origin: FixedVec2,
-    texture_bus_addr: u32,
+    texture_bus_addr: BusAddress,
 }
 
 impl Sprite {
     pub fn new(position: FixedVec2, width: i16, height: i16, texture: &[u8]) -> Self {
-        let texture_bus_addr = gl::arm_to_bus_addr(texture.as_ptr() as usize);
+        let texture_bus_addr = unsafe { BusAddress::from_ptr(texture.as_ptr()) };
         let width = FixedI16::from_num(width);
         let height = FixedI16::from_num(height);
 
