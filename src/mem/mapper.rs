@@ -30,6 +30,7 @@ pub unsafe trait MemoryMapper {
 /// If any addresses that may be passed to the GPU are not identity mapped, **this implementation
 /// must not be used.** An implementation that performs the correct memory address translations is
 /// required in that case.
+#[derive(Debug)]
 pub struct IdentityMapper;
 
 unsafe impl MemoryMapper for IdentityMapper {

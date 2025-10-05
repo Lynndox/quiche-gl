@@ -8,6 +8,7 @@ use crate::{Result, display::Display, mem::mapper::*};
 mod state;
 use state::*;
 
+#[derive(Debug)]
 pub struct Context<S, M: MemoryMapper> {
     display: Display,
     mapper: M,
@@ -104,19 +105,22 @@ where
             self.send_mailbox_message(&init_msg)?;
 
             let mut buf_ptr = init_msg.buffer_ptr();
-            while buf_ptr.0 == 0 {
+            while *buf_ptr == 0 {
                 self.send_mailbox_message(&init_msg)?;
                 buf_ptr = init_msg.buffer_ptr();
             }
 
             let buf_size = init_msg.alloc_buffer.buf_size;
-            if buf_size == 0 {
-                // FIXME: i need to reorganize the error types anyway, so i can't be bothered to
-                // write one for this
-                // and really, i'm just going to be panicking in main at this point anyway
 
-                panic!("recieved a framebuffer size of 0 from the GPU");
-            }
+            // TODO: should this be considered an error?
+            //
+            // if buf_size == 0 {
+            //     // FIXME: i need to reorganize the error types anyway, so i can't be bothered to
+            //     // write one for this
+            //     // and really, i'm just going to be panicking in main at this point anyway
+            //
+            //     panic!("recieved a framebuffer size of 0 from the GPU");
+            // }
 
             let buf_ptr = self.phys_to_virt_addr(buf_ptr)?;
 

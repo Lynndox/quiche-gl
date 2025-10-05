@@ -3,6 +3,7 @@ use core::ops::Deref;
 use crate::mailbox::messages::*;
 use crate::{FrameBuffer, Result};
 
+#[derive(Debug)]
 pub struct Display {
     pub width: u32,
     pub height: u32,
