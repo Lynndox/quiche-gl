@@ -7,11 +7,11 @@ pub use error::*;
 
 use crate::Align16;
 use crate::mailbox::messages::*;
+use crate::mem::{ArmAddress, Physical};
 
-// FIXME: this shouldn't be a constant, but passed in by the user somehow, since
-// if the mailbox address has been remapped by the MMU, this will break.
-pub(crate) const MAIL_BASE: u32 = 0x3F00B880;
+pub(crate) const MAIL_BASE: ArmAddress<Physical> = ArmAddress::new(0x3F00B880);
 
+// FIXME:
 // I don't like this, and I don't like how messy this has become
 // but idk what to do about it rn so it's like this
 
@@ -67,46 +67,6 @@ impl<T: MailboxChannel> MessageBatch<T> {
             status: 0,
             messages,
             end_tag: 0,
-        }
-    }
-
-    /// Sends a message to the mailbox.
-    ///
-    /// # Safety
-    ///
-    /// The current implementation will spin until the mailbox is empty, but does not do any sort
-    /// of proper synchronization. This has the potential for race conditions.
-    ///
-    /// It is the caller's responsibility to ensure that only one thread is using the mailbox at a
-    /// time.
-    pub unsafe fn send(&mut self) -> Result<(), MailboxError> {
-        let mailbox_addr = ((&raw const *self) as u32 & !0x0F) | T::CHANNEL as u32;
-        let mailbox = unsafe { raw::unmapped_mailbox() };
-
-        // TODO: spin loop bad. replace this with interrupts or something
-        while mailbox.is_full() {
-            core::hint::spin_loop();
-        }
-
-        mailbox.write(mailbox_addr);
-
-        loop {
-            // TODO: again, spin loop bad. replace this with interrupts or something
-            while mailbox.is_empty() {
-                core::hint::spin_loop();
-            }
-            if mailbox.read() == mailbox_addr {
-                return match self.status() {
-                    RequestStatus::Request => Err(MailboxError::SendMessage(
-                        "Message still contains a request?!",
-                    )),
-                    // TODO: check error response and return a more useful error here
-                    RequestStatus::Error => {
-                        Err(MailboxError::SendMessage("Response contains an error."))
-                    }
-                    RequestStatus::Success => Ok(()),
-                };
-            }
         }
     }
 }

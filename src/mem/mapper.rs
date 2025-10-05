@@ -1,3 +1,5 @@
+use crate::mem::address::*;
+
 /// A translation interface between physical and virtual address spaces.
 ///
 /// # Safety
@@ -7,10 +9,16 @@
 pub unsafe trait MemoryMapper {
     type Error;
 
+    /// Translates a virtual address to the physical address space.
+    fn virt_to_phys_addr(
+        &self,
+        addr: ArmAddress<Virtual>,
+    ) -> Result<ArmAddress<Physical>, Self::Error>;
     /// Translates a physical address to the virtual address space.
-    fn phys_to_virt_addr(&self, addr: usize) -> Result<usize, Self::Error>;
-    /// Translates physical addresses to the MMU's kernel address space.
-    fn virt_to_phys_addr(&self, addr: usize) -> Result<usize, Self::Error>;
+    fn phys_to_virt_addr(
+        &self,
+        addr: ArmAddress<Physical>,
+    ) -> Result<ArmAddress<Virtual>, Self::Error>;
 }
 
 /// A dummy implementation of a [`MemoryMapper`] that returns the address as-is.
@@ -27,11 +35,16 @@ pub struct IdentityMapper;
 unsafe impl MemoryMapper for IdentityMapper {
     type Error = core::convert::Infallible;
 
-    fn phys_to_virt_addr(&self, addr: usize) -> Result<usize, Self::Error> {
-        Ok(addr)
+    fn virt_to_phys_addr(
+        &self,
+        addr: ArmAddress<Virtual>,
+    ) -> Result<ArmAddress<Physical>, Self::Error> {
+        Ok(ArmAddress::new(addr.addr))
     }
-
-    fn virt_to_phys_addr(&self, addr: usize) -> Result<usize, Self::Error> {
-        Ok(addr)
+    fn phys_to_virt_addr(
+        &self,
+        addr: ArmAddress<Physical>,
+    ) -> Result<ArmAddress<Virtual>, Self::Error> {
+        Ok(ArmAddress::new(addr.addr))
     }
 }

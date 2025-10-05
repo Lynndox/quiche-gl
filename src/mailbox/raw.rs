@@ -1,3 +1,5 @@
+use crate::mem::{ArmAddress, BusAddress, Virtual};
+
 use super::MailboxStatus;
 
 #[repr(C)]
@@ -16,7 +18,14 @@ impl RawMailbox {
         unsafe { ::core::ptr::read_volatile(self.read) }
     }
 
-    pub fn write(&self, value: u32) {
+    /// Writes data to the `write` register of the mailbox.
+    ///
+    /// If sending a bus address, as is typically the case, prefer [`Self::write_address`].
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the value being written is valid.
+    pub unsafe fn write(&self, value: u32) {
         unsafe {
             ::core::ptr::write_volatile(self.write, value);
         }
@@ -33,6 +42,20 @@ impl RawMailbox {
     pub fn is_empty(&self) -> bool {
         self.status() == MailboxStatus::Empty
     }
+
+    /// Writes a bus address to the mailbox's `write` register.
+    ///
+    /// This is analogous to [`Self::write`] with a small added layer of safety by taking a
+    /// [`BusAddress`] instead of a raw [`u32`].
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the value being written is valid.
+    pub unsafe fn write_address(&self, addr: impl Into<BusAddress>) {
+        unsafe {
+            self.write(*addr.into());
+        };
+    }
 }
 
 /// Get a reference to the [`Mailbox`].
@@ -40,15 +63,6 @@ impl RawMailbox {
 /// # Safety
 ///
 /// The caller must ensure that only one core is accessing the mailbox at a time.
-pub const unsafe fn unmapped_mailbox() -> &'static RawMailbox {
-    unsafe { &*(super::MAIL_BASE as *const RawMailbox) }
-}
-
-/// Get a reference to the [`Mailbox`].
-///
-/// # Safety
-///
-/// The caller must ensure that only one core is accessing the mailbox at a time.
-pub const unsafe fn mailbox(addr: usize) -> &'static RawMailbox {
-    unsafe { &*(addr as *const RawMailbox) }
+pub const unsafe fn mailbox(addr: ArmAddress<Virtual>) -> &'static RawMailbox {
+    unsafe { &*(addr.addr as *const RawMailbox) }
 }

@@ -1,6 +1,6 @@
 use super::tag::*;
 use super::*;
-use crate::{Result, align16};
+use crate::{Result, align16, mem::BusAddress};
 
 macro_rules! trait_impl {
     ($($n:ident, $channel:path),* $(,)?) => {
@@ -60,8 +60,8 @@ impl InitFramebuffer {
 }
 
 impl InitFramebuffer {
-    pub fn buffer_ptr(&self) -> u32 {
-        unsafe { core::ptr::read_volatile(&raw const self.alloc_buffer.base_addr) }
+    pub fn buffer_ptr(&self) -> BusAddress {
+        BusAddress(unsafe { core::ptr::read_volatile(&raw const self.alloc_buffer.base_addr) })
     }
 }
 
