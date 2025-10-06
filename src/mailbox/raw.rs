@@ -1,21 +1,21 @@
-use crate::mem::{ArmAddress, BusAddress, Virtual};
+use crate::mem::{ArmAddress, BusAddress, Physical, Virtual};
 
 use super::MailboxStatus;
 
 #[repr(C)]
 pub struct RawMailbox {
-    read: *const u32,
+    read: u32,
     _unused: [u32; 3],
     poll: u32,
     sender: u32,
-    status: *const u32,
+    status: u32,
     config: u32,
-    write: *mut u32,
+    write: u32,
 }
 
 impl RawMailbox {
     pub fn read(&self) -> u32 {
-        unsafe { ::core::ptr::read_volatile(self.read) }
+        unsafe { ::core::ptr::read_volatile(&self.read) }
     }
 
     /// Writes data to the `write` register of the mailbox.
@@ -25,14 +25,14 @@ impl RawMailbox {
     /// # Safety
     ///
     /// The caller must ensure that the value being written is valid.
-    pub unsafe fn write(&self, value: u32) {
+    pub unsafe fn write(&mut self, value: u32) {
         unsafe {
-            ::core::ptr::write_volatile(self.write, value);
+            ::core::ptr::write_volatile(&mut self.write, value);
         }
     }
 
     pub fn status(&self) -> u32 {
-        unsafe { ::core::ptr::read_volatile(self.status) }
+        unsafe { ::core::ptr::read_volatile(&self.status) }
     }
 
     pub fn is_full(&self) -> bool {
@@ -51,9 +51,9 @@ impl RawMailbox {
     /// # Safety
     ///
     /// The caller must ensure that the value being written is valid.
-    pub unsafe fn write_address(&self, addr: impl Into<BusAddress>) {
+    pub unsafe fn write_address(&mut self, addr: ArmAddress<Physical>) {
         unsafe {
-            self.write(*addr.into());
+            self.write(addr.addr as u32);
         };
     }
 }

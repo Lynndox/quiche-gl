@@ -43,10 +43,10 @@ impl<S, M: MemoryMapper> Context<S, M> {
         crate::Error: From<<M as MemoryMapper>::Error>,
         <M as MemoryMapper>::Error: Into<crate::Error>,
     {
-        let mailbox = unsafe { &*(*self.phys_to_virt_addr(MAIL_BASE)? as *const RawMailbox) };
+        let mut mailbox = unsafe { &mut *(*self.phys_to_virt_addr(MAIL_BASE)? as *mut RawMailbox) };
 
         let msg_phys_addr = self.virt_to_phys_addr(message)?;
-        let mut msg_bus_addr = BusAddress::from(msg_phys_addr).with_channel(message.channel());
+        let msg_phys_addr_trunc = *msg_phys_addr as u32;
 
         // TODO: spin loop bad, usually. but the GPU should respond quick enough that it doesn't
         // matter. measure and find out.
@@ -54,7 +54,7 @@ impl<S, M: MemoryMapper> Context<S, M> {
             core::hint::spin_loop();
         }
 
-        unsafe { mailbox.write_address(msg_bus_addr) };
+        unsafe { mailbox.write(msg_phys_addr_trunc) };
 
         loop {
             // TODO: again, spin loop bad, usually. but the GPU should respond quick enough that it
@@ -63,7 +63,7 @@ impl<S, M: MemoryMapper> Context<S, M> {
                 core::hint::spin_loop();
             }
 
-            if mailbox.read() == *msg_bus_addr {
+            if mailbox.read() == msg_phys_addr_trunc {
                 return match message.status() {
                     RequestStatus::Request => Err(MailboxError::SendMessage(
                         "Message still contains a request?!",
