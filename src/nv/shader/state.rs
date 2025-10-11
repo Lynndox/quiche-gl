@@ -37,7 +37,8 @@ pub struct NvShaderStateInner {
     ///
     /// # Note
     ///
-    /// This must be 16-byte aligned if including clip coordinates in the header.
+    /// This must be 16-byte aligned if including clip coordinates in the
+    /// header.
     pub vert_data_addr: u32,
 }
 

@@ -30,10 +30,15 @@ pub trait MailboxMessage: Sealed {
     ///
     /// # Safety
     ///
-    /// With great power comes great responsibility. You should not use this unless you have a very
-    /// good reason to.
+    /// With great power comes great responsibility. You should not use this
+    /// unless you have a very good reason to.
     unsafe fn as_bytes(&self) -> &[u32] {
-        unsafe { core::slice::from_raw_parts(&raw const *self as *const u32, self.size() as _) }
+        unsafe {
+            core::slice::from_raw_parts(
+                &raw const *self as *const u32,
+                self.size() as _,
+            )
+        }
     }
 }
 
@@ -60,7 +65,9 @@ pub struct MessageBatch<T: MailboxChannel> {
 impl<T: MailboxChannel> MessageBatch<T> {
     pub const fn new(messages: T) -> Self {
         const {
-            assert!(((core::mem::size_of::<Self>() / 4) - 1) <= u32::MAX as usize);
+            assert!(
+                ((core::mem::size_of::<Self>() / 4) - 1) <= u32::MAX as usize
+            );
         }
         Self {
             size: (core::mem::size_of::<Self>() / 4) as u32,

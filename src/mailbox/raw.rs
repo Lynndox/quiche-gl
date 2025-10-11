@@ -20,7 +20,8 @@ impl RawMailbox {
 
     /// Writes data to the `write` register of the mailbox.
     ///
-    /// If sending a bus address, as is typically the case, prefer [`Self::write_address`].
+    /// If sending a bus address, as is typically the case, prefer
+    /// [`Self::write_address`].
     ///
     /// # Safety
     ///
@@ -45,8 +46,8 @@ impl RawMailbox {
 
     /// Writes a bus address to the mailbox's `write` register.
     ///
-    /// This is analogous to [`Self::write`] with a small added layer of safety by taking a
-    /// [`BusAddress`] instead of a raw [`u32`].
+    /// This is analogous to [`Self::write`] with a small added layer of safety
+    /// by taking a [`BusAddress`] instead of a raw [`u32`].
     ///
     /// # Safety
     ///
@@ -62,7 +63,8 @@ impl RawMailbox {
 ///
 /// # Safety
 ///
-/// The caller must ensure that only one core is accessing the mailbox at a time.
+/// The caller must ensure that only one core is accessing the mailbox at a
+/// time.
 pub const unsafe fn mailbox(addr: ArmAddress<Virtual>) -> &'static RawMailbox {
     unsafe { &*(addr.addr as *const RawMailbox) }
 }

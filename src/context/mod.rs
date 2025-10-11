@@ -38,18 +38,23 @@ impl<S, M: MemoryMapper> Context<S, M> {
         self.mapper.phys_to_virt_addr(addr.into())
     }
 
-    pub fn send_mailbox_message<T: MailboxMessage>(&mut self, message: &Align16<T>) -> Result<()>
+    pub fn send_mailbox_message<T: MailboxMessage>(
+        &mut self,
+        message: &Align16<T>,
+    ) -> Result<()>
     where
         crate::Error: From<<M as MemoryMapper>::Error>,
         <M as MemoryMapper>::Error: Into<crate::Error>,
     {
-        let mut mailbox = unsafe { &mut *(*self.phys_to_virt_addr(MAIL_BASE)? as *mut RawMailbox) };
+        let mut mailbox = unsafe {
+            &mut *(*self.phys_to_virt_addr(MAIL_BASE)? as *mut RawMailbox)
+        };
 
         let msg_phys_addr = self.virt_to_phys_addr(message)?;
         let msg_phys_addr_trunc = *msg_phys_addr as u32;
 
-        // TODO: spin loop bad, usually. but the GPU should respond quick enough that it doesn't
-        // matter. measure and find out.
+        // TODO: spin loop bad, usually. but the GPU should respond quick enough
+        // that it doesn't matter. measure and find out.
         while mailbox.is_full() {
             core::hint::spin_loop();
         }
@@ -57,8 +62,9 @@ impl<S, M: MemoryMapper> Context<S, M> {
         unsafe { mailbox.write(msg_phys_addr_trunc) };
 
         loop {
-            // TODO: again, spin loop bad, usually. but the GPU should respond quick enough that it
-            // doesn't matter. measure and find out.
+            // TODO: again, spin loop bad, usually. but the GPU should respond
+            // quick enough that it doesn't matter. measure and find
+            // out.
             while mailbox.is_empty() {
                 core::hint::spin_loop();
             }
@@ -68,10 +74,11 @@ impl<S, M: MemoryMapper> Context<S, M> {
                     RequestStatus::Request => Err(MailboxError::SendMessage(
                         "Message still contains a request?!",
                     )),
-                    // TODO: check error response and return a more useful error here
-                    RequestStatus::Error => {
-                        Err(MailboxError::SendMessage("Response contains an error."))
-                    }
+                    // TODO: check error response and return a more useful error
+                    // here
+                    RequestStatus::Error => Err(MailboxError::SendMessage(
+                        "Response contains an error.",
+                    )),
                     RequestStatus::Success => Ok(()),
                 }
                 .map_err(Into::into);
@@ -84,7 +91,12 @@ impl<M: MemoryMapper> Context<Uninitialized, M>
 where
     crate::Error: From<<M as MemoryMapper>::Error>,
 {
-    pub const fn with_mapper(width: u32, height: u32, bit_depth: u32, mapper: M) -> Self {
+    pub const fn with_mapper(
+        width: u32,
+        height: u32,
+        bit_depth: u32,
+        mapper: M,
+    ) -> Self {
         Self {
             display: Display::new(width, height, bit_depth),
             mapper,
@@ -92,7 +104,10 @@ where
         }
     }
 
-    pub fn initialize(mut self, double_buffer: bool) -> Result<Context<Initialized, M>> {
+    pub fn initialize(
+        mut self,
+        double_buffer: bool,
+    ) -> Result<Context<Initialized, M>> {
         unsafe {
             self.send_mailbox_message(&InitQpu::message(250))?;
 
@@ -115,17 +130,20 @@ where
             // TODO: should this be considered an error?
             //
             // if buf_size == 0 {
-            //     // FIXME: i need to reorganize the error types anyway, so i can't be bothered to
-            //     // write one for this
-            //     // and really, i'm just going to be panicking in main at this point anyway
+            //     // FIXME: i need to reorganize the error types anyway, so i
+            // can't be bothered to     // write one for this
+            //     // and really, i'm just going to be panicking in main at this
+            // point anyway
             //
             //     panic!("recieved a framebuffer size of 0 from the GPU");
             // }
 
             let buf_ptr = self.phys_to_virt_addr(buf_ptr)?;
 
-            let framebuffer =
-                core::slice::from_raw_parts_mut(*buf_ptr as *mut u32, buf_size as usize);
+            let framebuffer = core::slice::from_raw_parts_mut(
+                *buf_ptr as *mut u32,
+                buf_size as usize,
+            );
 
             self.display.virt_width = init_msg.virt_res.width;
             self.display.virt_height = init_msg.virt_res.height;

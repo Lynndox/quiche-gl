@@ -5,7 +5,8 @@ use core::{
 
 use crate::{VC_BUS_ADDR, mailbox::Channel};
 
-// FIXME: I don't like this interface at all, but it gives me the guarantees I need for now.
+// FIXME: I don't like this interface at all, but it gives me the guarantees I
+// need for now.
 
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -68,8 +69,8 @@ impl BusAddress {
     ///
     /// # Safety
     ///
-    /// The caller must ensure that this is a **physical address**, along with all the
-    /// other normal Rust memory safety guarantees.
+    /// The caller must ensure that this is a **physical address**, along with
+    /// all the other normal Rust memory safety guarantees.
     pub unsafe fn from_ptr<T>(ptr: *const T) -> Self {
         Self((ptr as usize) as u32)
     }

@@ -16,7 +16,9 @@ impl core::fmt::Display for MailboxError {
             MailboxError::SetVirtOffset => {
                 write!(f, "Failed to set virtual framebuffer offset.")
             }
-            MailboxError::GetMaxSpeed => write!(f, "Failed to get max clock speed"),
+            MailboxError::GetMaxSpeed => {
+                write!(f, "Failed to get max clock speed")
+            }
             MailboxError::FrameBufferInit { addr } => write!(
                 f,
                 "Failed to initialize framebuffer. Received address: {}",

@@ -2,7 +2,8 @@ use core::ops::{Deref, DerefMut};
 
 /// A wrapper for some data to aligns the inner `T` to 16 bytes.
 ///
-/// This is important for data sent to the QPU, as it _must_ be aligned to 16 byte boundaries.
+/// This is important for data sent to the QPU, as it _must_ be aligned to 16
+/// byte boundaries.
 #[repr(align(16))]
 pub struct Align16<T> {
     inner: T,

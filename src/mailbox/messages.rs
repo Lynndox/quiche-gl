@@ -28,7 +28,12 @@ pub struct InitFramebuffer {
 }
 
 impl InitFramebuffer {
-    pub const fn new(width: u32, height: u32, bit_depth: u32, double_buffer: bool) -> Self {
+    pub const fn new(
+        width: u32,
+        height: u32,
+        bit_depth: u32,
+        double_buffer: bool,
+    ) -> Self {
         const {
             assert!(core::mem::size_of::<Self>() <= (u32::MAX as usize));
         }
@@ -61,7 +66,9 @@ impl InitFramebuffer {
 
 impl InitFramebuffer {
     pub fn buffer_ptr(&self) -> BusAddress {
-        BusAddress(unsafe { core::ptr::read_volatile(&raw const self.alloc_buffer.base_addr) })
+        BusAddress(unsafe {
+            core::ptr::read_volatile(&raw const self.alloc_buffer.base_addr)
+        })
     }
 }
 
@@ -74,7 +81,10 @@ pub struct InitQpu {
 impl InitQpu {
     pub const fn new(clock_rate_mhz: u32) -> Self {
         Self {
-            clock_rate: SetClockRate::new(Clock::V3D, clock_rate_mhz * 1_000 * 1_000),
+            clock_rate: SetClockRate::new(
+                Clock::V3D,
+                clock_rate_mhz * 1_000 * 1_000,
+            ),
             enable_qpu: EnableQpu::new(true),
         }
     }

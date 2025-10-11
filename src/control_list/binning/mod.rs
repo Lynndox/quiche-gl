@@ -62,7 +62,8 @@ pub struct TileBinningModeConfig {
     pub address: u32,
     /// Tile Allocation Memory Size (Bytes) (Bit 32..63)
     pub size: u32,
-    /// Tile State Data Array Base Address (16-Byte Aligned, Size Of 48 Bytes * Num Tiles) (Bit 64..95)
+    /// Tile State Data Array Base Address
+    /// (16-Byte Aligned, Size Of 48 Bytes * Num Tiles) (Bit 64..95)
     pub base_address: u32,
     /// Width (In Tiles) (Bit 96..103)
     pub width: u8,

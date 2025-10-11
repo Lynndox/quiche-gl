@@ -10,13 +10,14 @@ pub struct FixedVec2 {
 }
 
 impl FixedVec2 {
-    /// Creates a new instance of self from an X/Y position specified in pixel space by converting
-    /// the supplied values to 12.4 fixed point numbers.
+    /// Creates a new instance of self from an X/Y position specified in pixel
+    /// space by converting the supplied values to 12.4 fixed point numbers.
     ///
     /// # Note
     ///
-    /// This function truncates the upper 4 bits of the supplied value. If this is undesirable,
-    /// either use [`saturating_new`](Self::saturating_new) or handle the conversion beforehand
+    /// This function truncates the upper 4 bits of the supplied value. If this
+    /// is undesirable, either use [`saturating_new`](Self::saturating_new)
+    /// or handle the conversion beforehand
     /// and use [`from_fixed`](Self::from_fixed).
     pub fn new(x: i16, y: i16) -> Self {
         Self {
@@ -25,9 +26,9 @@ impl FixedVec2 {
         }
     }
 
-    /// Creates a new instance of self from an X/Y position specified in pixel space by first
-    /// clamping the values to the maximum a `u12` can hold (`0xFFF`), then shifting the values
-    /// left by 4 bits.
+    /// Creates a new instance of self from an X/Y position specified in pixel
+    /// space by first clamping the values to the maximum a `u12` can hold
+    /// (`0xFFF`), then shifting the values left by 4 bits.
     pub fn saturating_new(x: i16, y: i16) -> Self {
         Self {
             x: I12F4::saturating_from_num(x),
@@ -35,8 +36,8 @@ impl FixedVec2 {
         }
     }
 
-    /// Creates a new instance of self from an X/Y position specified in pixel space already
-    /// converted to [`PixelCoord`]s.
+    /// Creates a new instance of self from an X/Y position specified in pixel
+    /// space already converted to [`PixelCoord`]s.
     pub fn from_fixed(x: I12F4, y: I12F4) -> Self {
         Self { x, y }
     }

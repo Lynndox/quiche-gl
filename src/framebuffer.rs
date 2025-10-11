@@ -11,8 +11,8 @@ impl FrameBuffer {
     ///
     /// # Safety
     ///
-    /// The framebuffer **must** be initialized before use. Failure to do so will lead to
-    /// undefined behavior.
+    /// The framebuffer **must** be initialized before use. Failure to do so
+    /// will lead to undefined behavior.
     pub(crate) const unsafe fn empty() -> Self {
         unsafe {
             Self {

@@ -11,16 +11,28 @@ pub struct Sprite {
 }
 
 impl Sprite {
-    pub fn new(position: FixedVec2, width: i16, height: i16, texture: &[u8]) -> Self {
-        let texture_bus_addr = unsafe { BusAddress::from_ptr(texture.as_ptr()) };
+    pub fn new(
+        position: FixedVec2,
+        width: i16,
+        height: i16,
+        texture: &[u8],
+    ) -> Self {
+        let texture_bus_addr =
+            unsafe { BusAddress::from_ptr(texture.as_ptr()) };
         let width = FixedI16::from_num(width);
         let height = FixedI16::from_num(height);
 
         // TODO: no idea if these texture coordinates are correct.
-        // what are s and t really? just going off of PeterLemon's examples kinda
+        // what are s and t really? just going off of PeterLemon's examples
+        // kinda
         let quad = [
             // top left
-            ShadedVertex::new(position, 1.0, 1.0, TextureCoords { s: 0.0, t: 0.0 }),
+            ShadedVertex::new(
+                position,
+                1.0,
+                1.0,
+                TextureCoords { s: 0.0, t: 0.0 },
+            ),
             // bottom left
             ShadedVertex::new(
                 position.add_y(height),

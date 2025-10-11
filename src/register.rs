@@ -235,9 +235,11 @@ pub const VPMSZ: u32 = 0xF0000000;
 
 /// V3D_IDENT2: VRI Memory Size (0 = Half Size, 1 = Full Size) READ
 pub const VRISZ: u32 = 0x0000000F;
-/// V3D_IDENT2: Tile Buffer Size (0 = Quarter Size, 1 = Half Size, 2 = Full Size (32x32msm)) READ
+/// V3D_IDENT2: Tile Buffer Size (0 = Quarter Size, 1 = Half Size, 2 = Full Size
+/// (32x32msm)) READ
 pub const TLBSZ: u32 = 0x000000F0;
-/// V3D_IDENT2: Tile Buffer Double-Buffer Mode Support (0 = Not Supported, 1 = Supported) READ
+/// V3D_IDENT2: Tile Buffer Double-Buffer Mode Support (0 = Not Supported, 1 =
+/// Supported) READ
 pub const TLBDB: u32 = 0x00000F00;
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -248,7 +250,8 @@ pub const TLBDB: u32 = 0x00000F00;
 // V3D_SCRATCH: V3D Scratch Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_SCRATCH: Scratch Register (Read/Write Registers For General Purposes) READ/WRITE
+/// V3D_SCRATCH: Scratch Register (Read/Write Registers For General Purposes)
+/// READ/WRITE
 pub const SCRATCH: u32 = 0xFFFFFFFF;
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -259,7 +262,8 @@ pub const SCRATCH: u32 = 0xFFFFFFFF;
 // V3D_L2CACTL: V3D L2 Cache Control Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_L2CACTL: L2 Cache Enable (Reads State Of Cache Enable Bit, Write To Enable The L2 Cache) READ/WRITE
+/// V3D_L2CACTL: L2 Cache Enable (Reads State Of Cache Enable Bit, Write To
+/// Enable The L2 Cache) READ/WRITE
 pub const L2CENA: u32 = 0x00000001;
 /// V3D_L2CACTL: L2 Cache Disable (Write To Disable The L2 Cache) WRITE
 pub const L2CDIS: u32 = 0x00000002;
@@ -270,7 +274,8 @@ pub const L2CCLR: u32 = 0x00000004;
 // V3D_SLCACTL: V3D Slices Cache Control Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_SLCACTL: Instruction Cache Clear Bits (Write To Clear Instruction Cache) WRITE
+/// V3D_SLCACTL: Instruction Cache Clear Bits (Write To Clear Instruction Cache)
+/// WRITE
 pub const ICCS0_TO_ICCS3: u32 = 0x0000000F;
 /// V3D_SLCACTL: Uniforms Cache Clear Bits (Write To Clear Uniforms Cache) WRITE
 pub const UCCS0_TO_UCCS3: u32 = 0x00000F00;
@@ -287,39 +292,51 @@ pub const T1CCS0_TO_T1CCS3: u32 = 0x0F000000;
 // V3D_INTCTL: V3D Interrupt Control Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_INTCTL: Render Mode Frame Done Interrupt Status (Set When All Tiles Of The Frame Have Been Written To Memory) READ/WRITE
+/// V3D_INTCTL: Render Mode Frame Done Interrupt Status (Set When All Tiles Of
+/// The Frame Have Been Written To Memory) READ/WRITE
 pub const INT_FRDONE: u32 = 0x00000001;
-/// V3D_INTCTL: Binning Mode Flush Done Interrupt Status (Set When Binning Is Complete With All Tile Lists Flushed To Memory) READ/WRITE
+/// V3D_INTCTL: Binning Mode Flush Done Interrupt Status (Set When Binning Is
+/// Complete With All Tile Lists Flushed To Memory) READ/WRITE
 pub const INT_FLDONE: u32 = 0x00000002;
-/// V3D_INTCTL: Binner Out Of Memory Interrupt Status (Set While The Binner Needs More Memory To Complete) READ/WRITE
+/// V3D_INTCTL: Binner Out Of Memory Interrupt Status (Set While The Binner
+/// Needs More Memory To Complete) READ/WRITE
 pub const INT_OUTOMEM: u32 = 0x00000004;
-/// V3D_INTCTL: Binner Used Overspill Memory Interrupt Status (Set When The Binner Starts Using The (Valid) Overspill Memory Buffer) READ/WRITE
+/// V3D_INTCTL: Binner Used Overspill Memory Interrupt Status (Set When The
+/// Binner Starts Using The (Valid) Overspill Memory Buffer) READ/WRITE
 pub const INT_SPILLUSE: u32 = 0x00000008;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_INTENA: V3D Interrupt Enables Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_INTENA: Render Mode Frame Done Interrupt Enable (Set When The INT_FRDONE Interrupt Is Set) READ/WRITE
+/// V3D_INTENA: Render Mode Frame Done Interrupt Enable (Set When The INT_FRDONE
+/// Interrupt Is Set) READ/WRITE
 pub const EI_FRDONE: u32 = 0x00000001;
-/// V3D_INTENA: Binning Mode Flush Done Interrupt Enable (Set When The INT_FLDONE Interrupt Is Set) READ/WRITE
+/// V3D_INTENA: Binning Mode Flush Done Interrupt Enable (Set When The
+/// INT_FLDONE Interrupt Is Set) READ/WRITE
 pub const EI_FLDONE: u32 = 0x00000002;
-/// V3D_INTENA: Binner Out Of Memory Interrupt Enable (Set When The INT_OUTOMEM Interrupt Is Set) READ/WRITE
+/// V3D_INTENA: Binner Out Of Memory Interrupt Enable (Set When The INT_OUTOMEM
+/// Interrupt Is Set) READ/WRITE
 pub const EI_OUTOMEM: u32 = 0x00000004;
-/// V3D_INTENA: Binner Used Overspill Memory Interrupt Enable (Set When The INT_SPILLUSE Interrupt Is Set) READ/WRITE
+/// V3D_INTENA: Binner Used Overspill Memory Interrupt Enable (Set When The
+/// INT_SPILLUSE Interrupt Is Set) READ/WRITE
 pub const EI_SPILLUSE: u32 = 0x00000008;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_INTDIS: V3D Interrupt Disables Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_INTDIS: Render Mode Frame Done Interrupt Disable (Set When The INT_FRDONE Interrupt Is Set) READ/WRITE
+/// V3D_INTDIS: Render Mode Frame Done Interrupt Disable (Set When The
+/// INT_FRDONE Interrupt Is Set) READ/WRITE
 pub const DI_FRDONE: u32 = 0x00000001;
-/// V3D_INTDIS: Binning Mode Flush Done Interrupt Disable (Set When The INT_FLDONE Interrupt Is Set) READ/WRITE
+/// V3D_INTDIS: Binning Mode Flush Done Interrupt Disable (Set When The
+/// INT_FLDONE Interrupt Is Set) READ/WRITE
 pub const DI_FLDONE: u32 = 0x00000002;
-/// V3D_INTDIS: Binner Out Of Memory Interrupt Disable (Set When The INT_OUTOMEM Interrupt Is Set) READ/WRITE
+/// V3D_INTDIS: Binner Out Of Memory Interrupt Disable (Set When The INT_OUTOMEM
+/// Interrupt Is Set) READ/WRITE
 pub const DI_OUTOMEM: u32 = 0x00000004;
-/// V3D_INTDIS: Binner Used Overspill Memory Interrupt Disable (Set When The INT_SPILLUSE Interrupt Is Set) READ/WRITE
+/// V3D_INTDIS: Binner Used Overspill Memory Interrupt Disable (Set When The
+/// INT_SPILLUSE Interrupt Is Set) READ/WRITE
 pub const DI_SPILLUSE: u32 = 0x00000008;
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -327,12 +344,14 @@ pub const DI_SPILLUSE: u32 = 0x00000008;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// V3D_CTnCS: V3D Control List Executor Thread n Control & Status Register Description
+// V3D_CTnCS: V3D Control List Executor Thread n Control & Status Register
+// Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 /// V3D_CTnCS: Control Thread Mode (Binning Mode Thread Only) READ
 pub const CTMODE: u32 = 0x00000001;
-/// V3D_CTnCS: Control Thread Error (Set When Stopped With An Error, Cleared On Restarting) READ
+/// V3D_CTnCS: Control Thread Error (Set When Stopped With An Error, Cleared On
+/// Restarting) READ
 pub const CTERR: u32 = 0x00000008;
 /// V3D_CTnCS: Control Thread Sub-Mode READ/WRITE
 pub const CTSUBS: u32 = 0x00000010;
@@ -340,46 +359,59 @@ pub const CTSUBS: u32 = 0x00000010;
 pub const CTRUN: u32 = 0x00000020;
 /// V3D_CTnCS: Return Stack Depth (Number Of Levels Of List Nesting) READ
 pub const CTRTSD: u32 = 0x00000300;
-/// V3D_CTnCS: Counting Semaphore (Current State Of The Counting Semaphore For This Thread) READ
+/// V3D_CTnCS: Counting Semaphore (Current State Of The Counting Semaphore For
+/// This Thread) READ
 pub const CTSEMA: u32 = 0x00007000;
-/// V3D_CTnCS: Reset Bit (Writing 1 Stops The Control Thread & Resets All Bits In This Register) WRITE
+/// V3D_CTnCS: Reset Bit (Writing 1 Stops The Control Thread & Resets All Bits
+/// In This Register) WRITE
 pub const CTRSTA: u32 = 0x00008000;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// V3D_CTnEA: V3D Control List Executor Thread n End Address Register Description
+// V3D_CTnEA: V3D Control List Executor Thread n End Address Register
+// Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_CTnEA: Control List End Address (Set To The Byte Address After The Last Record In The Control List) READ/WRITE
+/// V3D_CTnEA: Control List End Address (Set To The Byte Address After The Last
+/// Record In The Control List) READ/WRITE
 pub const CTLEA: u32 = 0xFFFFFFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// V3D_CTnCA: V3D Control List Executor Thread n Current Address Register Description
+// V3D_CTnCA: V3D Control List Executor Thread n Current Address Register
+// Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_CTnCA: Control List Current Address (Points To The Address Of The Current Record In The Control List) READ/WRITE
+/// V3D_CTnCA: Control List Current Address (Points To The Address Of The
+/// Current Record In The Control List) READ/WRITE
 pub const CTLCA: u32 = 0xFFFFFFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// V3D_CTnRA0: V3D Control List Executor Thread n Return Address Register Description
+// V3D_CTnRA0: V3D Control List Executor Thread n Return Address Register
+// Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_CTnRA0: Control List Return Address 0 (Address On Return Address Stack) READ
+/// V3D_CTnRA0: Control List Return Address 0 (Address On Return Address Stack)
+/// READ
 pub const CTLRA: u32 = 0xFFFFFFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// V3D_CTnLC: V3D Control List Executor Thread n List Counter Register Description
+// V3D_CTnLC: V3D Control List Executor Thread n List Counter Register
+// Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_CTnLC: Sub-list Counter (Count Of Return Commands Encountered) READ/WRITE
+/// V3D_CTnLC: Sub-list Counter (Count Of Return Commands Encountered)
+/// READ/WRITE
 pub const CTLSLCS: u32 = 0x0000FFFF;
-/// V3D_CTnLC: Major List Counter (Count Of Flush Commands Encountered) READ/WRITE
+/// V3D_CTnLC: Major List Counter (Count Of Flush Commands Encountered)
+/// READ/WRITE
 pub const CTLLCM: u32 = 0xFFFF0000;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// V3D_CTnPC: V3D Control List Executor Thread n Primitive List Counter Register Description
+// V3D_CTnPC: V3D Control List Executor Thread n Primitive List Counter Register
+// Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_CTnPC: Primitive List Counter (Count Of Primitives Remaining Whilst Processing A Primitive List) READ
+/// V3D_CTnPC: Primitive List Counter (Count Of Primitives Remaining Whilst
+/// Processing A Primitive List) READ
 pub const CTLPC: u32 = 0xFFFFFFFF;
 
 //;;;;;;;;;;;;;;;;;;;;;;;;
@@ -392,55 +424,68 @@ pub const CTLPC: u32 = 0xFFFFFFFF;
 
 /// V3D_PCS: Binning Mode Active (Set While Binning Pipeline Is In Use) READ
 pub const BMACTIVE: u32 = 0x00000001;
-/// V3D_PCS: Binning Mode Busy (Set While Any Binning Operations Are Actually In Progress) READ
+/// V3D_PCS: Binning Mode Busy (Set While Any Binning Operations Are Actually In
+/// Progress) READ
 pub const BMBUSY: u32 = 0x00000002;
 /// V3D_PCS: Rendering Mode Active (Set While Rendering Pipeline Is In Use) READ
 pub const RMACTIVE: u32 = 0x00000004;
-/// V3D_PCS: Rendering Mode Busy (Set While Any Rendering Operations Are Actually In Progress) READ
+/// V3D_PCS: Rendering Mode Busy (Set While Any Rendering Operations Are
+/// Actually In Progress) READ
 pub const RMBUSY: u32 = 0x00000008;
-/// V3D_PCS: Binning Mode Out Of Memory (Set When PTB Runs Out Of Binning Memory While Binning) READ
+/// V3D_PCS: Binning Mode Out Of Memory (Set When PTB Runs Out Of Binning Memory
+/// While Binning) READ
 pub const BMOOM: u32 = 0x00000100;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_BFC: V3D Binning Mode Flush Count Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_BFC: Flush Count (Count Increments In Binning Mode Once PTB Has Flushed All Tile Lists To Mem & PTB Has Finished With Tile State Data Array) READ/WRITE
+/// V3D_BFC: Flush Count (Count Increments In Binning Mode Once PTB Has Flushed
+/// All Tile Lists To Mem & PTB Has Finished With Tile State Data Array)
+/// READ/WRITE
 pub const BMFCT: u32 = 0x000000FF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_RFC: V3D Rendering Mode Frame Count Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_RFC: Frame Count (Count Increments In Rendering Mode When Last Tile Store Operation Of Frame Completes, The Tile Has Fully Written Out To Mem) READ/WRITE
+/// V3D_RFC: Frame Count (Count Increments In Rendering Mode When Last Tile
+/// Store Operation Of Frame Completes, The Tile Has Fully Written Out To Mem)
+/// READ/WRITE
 pub const RMFCT: u32 = 0x000000FF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_BPCA: V3D Current Address Of Binning Memory Pool Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_BPCA: Current Pool Address (The Address Of The Current Allocation Pointer In The Binning Memory Pool) READ
+/// V3D_BPCA: Current Pool Address (The Address Of The Current Allocation
+/// Pointer In The Binning Memory Pool) READ
 pub const BMPCA: u32 = 0xFFFFFFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_BPCS: V3D Remaining Size Of Binning Memory Pool Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_BPCS: Size Of Pool Remaining (The Number Of Bytes Remaining In The Binning Memory Pool) READ
+/// V3D_BPCS: Size Of Pool Remaining (The Number Of Bytes Remaining In The
+/// Binning Memory Pool) READ
 pub const BMPRS: u32 = 0xFFFFFFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_BPOA: V3D Address Of Overspill Binning Memory Block Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_BPOA: Address Of Overspill Memory Block For Binning (Address Of Additional Mem That PTB Can Use For Binning Once Initial Pool Runs Out) READ/WRITE
+/// V3D_BPOA: Address Of Overspill Memory Block For Binning (Address Of
+/// Additional Mem That PTB Can Use For Binning Once Initial Pool Runs Out)
+/// READ/WRITE
 pub const BMPOA: u32 = 0xFFFFFFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_BPOS: V3D Size Of Overspill Binning Memory Block Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_BPOS: Size Of Overspill Memory Block For Binning (Number Of Bytes Of Additional Mem That PTB Can Use For Binning Once Initial Pool Runs Out) READ/WRITE
+/// V3D_BPOS: Size Of Overspill Memory Block For Binning (Number Of Bytes Of
+/// Additional Mem That PTB Can Use For Binning Once Initial Pool Runs Out)
+/// READ/WRITE
 pub const BMPOS: u32 = 0xFFFFFFFF;
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -502,34 +547,41 @@ pub const CSRBL: u32 = 0x0000000C;
 // V3D_SRQPC: V3D QPU User Program Request Program Address Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_SRQPC: Program Address (Writing This Register Queues A Request To Run A Program Starting At The Given Address) WRITE
+/// V3D_SRQPC: Program Address (Writing This Register Queues A Request To Run A
+/// Program Starting At The Given Address) WRITE
 pub const QPURQPC: u32 = 0xFFFFFFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_SRQUA: V3D QPU User Program Request Uniforms Address Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_SRQUA: Uniforms Address (Contains The Address Of The Uniforms Stream For The Next User Program To Be Queued Via A Write To V3DRQPC) READ/WRITE
+/// V3D_SRQUA: Uniforms Address (Contains The Address Of The Uniforms Stream For
+/// The Next User Program To Be Queued Via A Write To V3DRQPC) READ/WRITE
 pub const QPURQUA: u32 = 0xFFFFFFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_SRQUL: V3D QPU User Program Request Uniforms Length Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_SRQUL: Uniforms Length (Contains The Max Length Of The Uniforms Stream For The Next User Program To Be Queued Via A Write To V3DRQPC) READ/WRITE
+/// V3D_SRQUL: Uniforms Length (Contains The Max Length Of The Uniforms Stream
+/// For The Next User Program To Be Queued Via A Write To V3DRQPC) READ/WRITE
 pub const QPURQUL: u32 = 0x00000FFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_SRQCS: V3D QPU User Program Request Control & Status Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_SRQCS: Queue Length (Contains The Number Of Program Requests Currently Queued) READ/WRITE
+/// V3D_SRQCS: Queue Length (Contains The Number Of Program Requests Currently
+/// Queued) READ/WRITE
 pub const QPURQL: u32 = 0x0000003F;
-/// V3D_SRQCS: Queue Error (Set When A Request Has Been Made When The Queue Is Full) READ/WRITE
+/// V3D_SRQCS: Queue Error (Set When A Request Has Been Made When The Queue Is
+/// Full) READ/WRITE
 pub const QPURQERR: u32 = 0x00000080;
-/// V3D_SRQCS: Count Of User Program Requests Made (Contains The Total Number Of User Program Requests Made, Modulo 256) READ/WRITE
+/// V3D_SRQCS: Count Of User Program Requests Made (Contains The Total Number Of
+/// User Program Requests Made, Modulo 256) READ/WRITE
 pub const QPURQCM: u32 = 0x0000FF00;
-/// V3D_SRQCS: Count Of User Programs Completed (Contains The Total Number Of User Programs That Have Run & Completed, Modulo 256) READ/WRITE
+/// V3D_SRQCS: Count Of User Programs Completed (Contains The Total Number Of
+/// User Programs That Have Run & Completed, Modulo 256) READ/WRITE
 pub const QPURQCC: u32 = 0x00FF0000;
 
 //;;;;;;;;;;;;;;;;;;;
@@ -540,24 +592,31 @@ pub const QPURQCC: u32 = 0x00FF0000;
 // V3D_VPACNTL: V3D VPM Allocator Control Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_VPACNTL: Rendering VPM Allocation Limit (Limits The Amount Of VPM Memory Allocated To Rendering Mode) READ/WRITE
+/// V3D_VPACNTL: Rendering VPM Allocation Limit (Limits The Amount Of VPM Memory
+/// Allocated To Rendering Mode) READ/WRITE
 pub const VPARALIM: u32 = 0x00000007;
-/// V3D_VPACNTL: Binning VPM Allocation Limit (Limits The Amount Of VPM Memory Allocated To Binning Mode) READ/WRITE
+/// V3D_VPACNTL: Binning VPM Allocation Limit (Limits The Amount Of VPM Memory
+/// Allocated To Binning Mode) READ/WRITE
 pub const VPABALIM: u32 = 0x00000038;
-/// V3D_VPACNTL: Rendering VPM Allocation Timeout (Sets A Timeout For Raising The Priority Of Rendering Mode Allocation Requests) READ/WRITE
+/// V3D_VPACNTL: Rendering VPM Allocation Timeout (Sets A Timeout For Raising
+/// The Priority Of Rendering Mode Allocation Requests) READ/WRITE
 pub const VPARATO: u32 = 0x000001C0;
-/// V3D_VPACNTL: Binning VPM Allocation Timeout (Sets A Timeout For Raising The Priority Of Binning Mode Allocation Requests) READ/WRITE
+/// V3D_VPACNTL: Binning VPM Allocation Timeout (Sets A Timeout For Raising The
+/// Priority Of Binning Mode Allocation Requests) READ/WRITE
 pub const VPABATO: u32 = 0x00000E00;
-/// V3D_VPACNTL: Enable VPM Allocation Limits (Enables VPM Memory Allocation Limiting Using VPARALIM & VPABALIM) READ/WRITE
+/// V3D_VPACNTL: Enable VPM Allocation Limits (Enables VPM Memory Allocation
+/// Limiting Using VPARALIM & VPABALIM) READ/WRITE
 pub const VPALIMEN: u32 = 0x00001000;
-/// V3D_VPACNTL: Enable VPM Allocation Timeout (Enables VPM Memory Allocation Timeout Using VPARATO & VPABATO) READ/WRITE
+/// V3D_VPACNTL: Enable VPM Allocation Timeout (Enables VPM Memory Allocation
+/// Timeout Using VPARATO & VPABATO) READ/WRITE
 pub const VPATOEN: u32 = 0x00002000;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_VPMBASE: V3D VPM Base (User) Memory Reservation Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_VPMBASE: VPM Memory Reserved For User Programs (Contains Amount Of VPM Mem Reserved For All User Programs, In Multiples Of 256 Bytes) READ/WRITE
+/// V3D_VPMBASE: VPM Memory Reserved For User Programs (Contains Amount Of VPM
+/// Mem Reserved For All User Programs, In Multiples Of 256 Bytes) READ/WRITE
 pub const VPMURSV: u32 = 0x0000001F;
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -568,14 +627,16 @@ pub const VPMURSV: u32 = 0x0000001F;
 // V3D_DBQITE: V3D QPU Interrupt Enables Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_DBQITE: QPU Interrupt Enable bits (Set Bit To Allow QPU To Generate An Interrupt) READ/WRITE
+/// V3D_DBQITE: QPU Interrupt Enable bits (Set Bit To Allow QPU To Generate An
+/// Interrupt) READ/WRITE
 pub const IE_QPU0_TO_IE_QPU15: u32 = 0x0000FFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_DBQITC: V3D QPU Interrupt Control Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_DBQITC: QPU Interrupt Control Bits (Reads When Interrupt Is Latched, Write To Clear Interrupt) READ/WRITE
+/// V3D_DBQITC: QPU Interrupt Control Bits (Reads When Interrupt Is Latched,
+/// Write To Clear Interrupt) READ/WRITE
 pub const IC_QPU0_TO_IC_QPU15: u32 = 0x0000FFFF;
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -586,9 +647,11 @@ pub const IC_QPU0_TO_IC_QPU15: u32 = 0x0000FFFF;
 // V3D Sources For Performance Counters
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// FEP Valid Primitives That Result In No Rendered Pixels, For All Rendered Tiles
+/// FEP Valid Primitives That Result In No Rendered Pixels, For All Rendered
+/// Tiles
 pub const COUNT_ID_0: u32 = 0;
-/// FEP Valid Primitives For All Rendered Tiles (Primitives May Be Counted In More Than One Tile)
+/// FEP Valid Primitives For All Rendered Tiles (Primitives May Be Counted In
+/// More Than One Tile)
 pub const COUNT_ID_1: u32 = 1;
 /// FEP Early-Z/Near/Far Clipped Quads
 pub const COUNT_ID_2: u32 = 2;
@@ -651,14 +714,16 @@ pub const COUNT_ID_29: u32 = 29;
 // V3D_PCTRC: V3D Performance Counter Clear Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_PCTRC: Performance Counter Clear Bits (Write To Clear The Performance Counter) WRITE
+/// V3D_PCTRC: Performance Counter Clear Bits (Write To Clear The Performance
+/// Counter) WRITE
 pub const CTCLR0_CTCLR15: u32 = 0x0000FFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 // V3D_PCTRE: V3D Performance Counter Enables Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-/// V3D_PCTRE: Performance Counter Enable Bits (0 = Counter Disabled, 1 = Performance Counter Enabled To Count) READ/WRITE
+/// V3D_PCTRE: Performance Counter Enable Bits (0 = Counter Disabled, 1 =
+/// Performance Counter Enabled To Count) READ/WRITE
 pub const CTEN0_CTEN15: u32 = 0x0000FFFF;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -741,7 +806,8 @@ pub const EZVAL_FIFO_ORUN: u32 = 0x00008000;
 pub const EZREQ_FIFO_ORUN: u32 = 0x00020000;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// V3D_FDBGB: V3D FEP Interface Ready & Stall Signals, FEP Busy Signals Register Description
+// V3D_FDBGB: V3D FEP Interface Ready & Stall Signals, FEP Busy Signals Register
+// Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 /// V3D_FDBGB: Stall READ
@@ -868,7 +934,8 @@ pub const RECIPW_IP_STALL: u32 = 0x02000000;
 pub const ZO_FIFO_IP_STALL: u32 = 0x10000000;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// V3D_ERRSTAT: V3D Miscellaneous Error Signals (VPM, VDW, VCD, VCM, L2C) Register Description
+// V3D_ERRSTAT: V3D Miscellaneous Error Signals (VPM, VDW, VCD, VCM, L2C)
+// Register Description
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 /// V3D_ERRSTAT: VPM Allocator Error - Allocating Base While Busy READ
