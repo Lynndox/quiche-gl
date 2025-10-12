@@ -39,11 +39,11 @@ impl InitFramebuffer {
             assert!(core::mem::size_of::<Self>() <= (u32::MAX as usize));
         }
 
-        let virt_width = if double_buffer { width * 2 } else { width };
+        let virt_height = if double_buffer { height * 2 } else { height };
 
         Self {
             phys_display: SetPhysicalDisplay::new(width, height),
-            virt_res: SetVirtualResolution::new(virt_width, height),
+            virt_res: SetVirtualResolution::new(width, virt_height),
             bit_depth: SetBitDepth::new(bit_depth),
             virt_offset: SetVirtualOffset::new(0, 0),
             alloc_buffer: AllocateBuffer::new(),
