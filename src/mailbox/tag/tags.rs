@@ -1,5 +1,14 @@
 use crate::mailbox::Channel;
 
+macro_rules! volatile {
+    (@ $($t:tt)*) => {
+	$crate::mem::volatile::$($t)*
+    };
+    ($($t:tt)*) => {
+	volatile!(@Volatile::new($($t)*))
+    };
+}
+
 macro_rules! tag_impl {
     (@traitimpl $n:ident $channel:path) => {
 	impl $crate::mailbox::Sealed for $n {}
@@ -12,7 +21,7 @@ macro_rules! tag_impl {
 	    }
             fn status(&self) -> $crate::mailbox::RequestStatus {
                 $crate::mailbox::RequestStatus::from(
-		    $crate::volatile::VolatileRead::read_volatile(&self.status)
+		    volatile!(@VolatileRead::read(&self.status))
 		)
             }
         }
@@ -37,8 +46,8 @@ macro_rules! tag_impl {
 	pub struct $n {
 	    tag: u32,
 	    size: u32,
-	    pub status: $crate::volatile::Volatile<u32, $crate::volatile::Read>,
-	    $(pub $v: $crate::volatile::Volatile<u32, $crate::volatile::ReadWrite>,)*
+	    pub status: volatile!(@Volatile<u32, volatile!(@Read)>),
+	    $(pub $v: volatile!(@Volatile<u32, volatile!(@ReadWrite)>),)*
 	}
     };
     (@argty $t:ty) => { $t };
@@ -51,8 +60,8 @@ macro_rules! tag_impl {
 		Self {
 		    tag: $crate::mailbox::tag::Tag::$n,
 		    size: $size,
-		    status: $crate::volatile::Volatile::new($size),
-		    $($v: $crate::volatile::Volatile::new($v as u32)),*
+		    status: volatile!($size),
+		    $($v: volatile!($v as u32)),*
 		}
 	    }
 	}
@@ -68,24 +77,21 @@ macro_rules! tag_impl_noinput {
     ($($n:ident { channel = $channel:path, size = $size:literal$(, $($v:ident $(= $val:literal)?),*)? $(,)? } $(,)?),*) => {
 	$(
 	tag_impl!(@makestruct $n { $($($v),*),* });
+	#[allow(clippy::new_without_default)]
 	impl $n {
 	    pub const fn new() -> Self {
 		Self {
 		    tag: $crate::mailbox::tag::Tag::$n,
 		    size: $size,
-		    status: $crate::volatile::Volatile::new($size),
-		    $($($v: $crate::volatile::Volatile::new(tag_impl_noinput!(@val $($val)*))),*)*
+		    status: volatile!($size),
+		    $($($v: volatile!(tag_impl_noinput!(@val $($val)*))),*)*
 		}
 	    }
 	}
 
 	tag_impl!(@traitimpl $n $channel);
 	tag_impl!(@debugimpl $n { $($($v),*)* });
-	impl Default for $n {
-	    fn default() -> Self {
-		Self::new()
-	    }
-	})*
+	)*
     };
 }
 

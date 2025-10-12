@@ -3,8 +3,8 @@ use crate::mailbox::messages::*;
 use crate::mailbox::raw::Mailbox;
 use crate::mailbox::raw::mailbox;
 use crate::mailbox::*;
+use crate::mem::volatile::VolatileRead;
 use crate::mem::*;
-use crate::volatile::VolatileRead;
 use crate::{Result, display::Display, mem::mapper::*};
 
 mod state;
@@ -42,18 +42,17 @@ impl<S, M: MemoryMapper> Context<S, M> {
 
     pub fn send_mailbox_message<T: MailboxChannel>(
         &mut self,
-        message: *const Align16<MessageBatch<T>>,
+        message: &Align16<MessageBatch<T>>,
     ) -> Result<()>
     where
         crate::Error: From<<M as MemoryMapper>::Error>,
         <M as MemoryMapper>::Error: Into<crate::Error>,
     {
-        let message_ref = unsafe { message.as_ref().unwrap_unchecked() };
         let mailbox = unsafe { mailbox(self.phys_to_virt_addr(MAIL_BASE)?) };
 
-        let msg_phys_addr = self.virt_to_phys_addr(message.addr())?;
+        let msg_phys_addr = self.virt_to_phys_addr(message as *const _)?;
         let msg_channel_addr =
-            (msg_phys_addr.addr & !0xF) | message_ref.channel() as u32 as usize;
+            (msg_phys_addr.addr & !0xF) | T::CHANNEL as u32 as usize;
 
         while mailbox.is_full() {
             core::hint::spin_loop();
@@ -66,9 +65,8 @@ impl<S, M: MemoryMapper> Context<S, M> {
                 core::hint::spin_loop();
             }
 
-
             if mailbox.read() == msg_channel_addr as u32 {
-                return match message_ref.status() {
+                return match message.status() {
                     RequestStatus::Request => Err(MailboxError::SendMessage(
                         "Message still contains a request?!",
                     )),
@@ -120,9 +118,8 @@ where
             );
             self.send_mailbox_message(&init_msg)?;
 
-            let mut buf_ptr = init_msg.inner().buffer_ptr();
-            let buf_size =
-                init_msg.inner().alloc_buffer.buf_size.read_volatile();
+            let mut buf_ptr = init_msg.buffer_ptr();
+            let buf_size = init_msg.alloc_buffer.buf_size.read();
 
             // TODO: should this be considered an error?
             //
@@ -142,10 +139,8 @@ where
                 buf_size as usize,
             );
 
-            self.display.virt_width =
-                init_msg.inner().virt_res.width.read_volatile();
-            self.display.virt_height =
-                init_msg.inner().virt_res.height.read_volatile();
+            self.display.virt_width = init_msg.virt_res.width.read();
+            self.display.virt_height = init_msg.virt_res.height.read();
 
             Ok(Context {
                 display: self.display,

@@ -56,18 +56,18 @@ impl InitFramebuffer {
         bit_depth: u32,
         double_buffer: bool,
     ) -> Align16<MessageBatch<Self>> {
-        align16!(MessageBatch::new(Self::new(
+        MessageBatch::new_aligned(Self::new(
             width,
             height,
             bit_depth,
-            double_buffer
-        )))
+            double_buffer,
+        ))
     }
 }
 
 impl InitFramebuffer {
     pub fn buffer_ptr(&self) -> BusAddress {
-        BusAddress(unsafe { self.alloc_buffer.base_addr.read_volatile() })
+        BusAddress(unsafe { self.alloc_buffer.base_addr.read() })
     }
 }
 

@@ -2,14 +2,24 @@ pub struct Read;
 pub struct Write;
 pub struct ReadWrite;
 
-pub unsafe trait VolatileRead<T: Copy> {
+/// Performs a volatile read of the value contained in self.
+///
+/// See [`read_volatile`](core::ptr::read_volatile) for more details.
+pub trait VolatileRead<T: Copy>: Sealed {
     /// Performs a volatile read of the value contained in self.
     ///
     /// See [`read_volatile`](core::ptr::read_volatile) for more details.
-    fn read_volatile(&self) -> T;
+    fn read(&self) -> T;
 }
 
-pub unsafe trait UnsafeVolatileRead<T> {
+/// Performs a volatile read of the value contained in self, whether or not
+/// `T` is copy.
+///
+/// This method is implemented for any `T` due to the lack of negative trait
+/// bounds. If `T` is copy, prefer [`VolatileRead::read`].
+///
+/// See [`read_volatile`](core::ptr::read_volatile) for more details.
+pub trait UnsafeVolatileRead<T>: Sealed {
     /// Performs a volatile read of the value contained in self, whether or not
     /// `T` is copy.
     ///
@@ -22,52 +32,56 @@ pub unsafe trait UnsafeVolatileRead<T> {
     /// [`read_volatile`](core::ptr::read_volatile) are upheld.
     ///
     /// See that method's definition for more details.
-    unsafe fn read_volatile_noncopy(&self) -> T;
+    unsafe fn read_noncopy(&self) -> T;
 }
 
-pub unsafe trait VolatileWrite<T> {
+/// Performs a volatile write of a memory location with the given value
+/// without reading or dropping the old value.
+///
+/// See [`write_volatile`](core::ptr::write_volatile) for more details.
+pub trait VolatileWrite<T>: Sealed {
     /// Performs a volatile write of a memory location with the given value
     /// without reading or dropping the old value.
     ///
     /// See [`write_volatile`](core::ptr::write_volatile) for more details.
-    fn write_volatile(&mut self, value: T);
+    fn write(&mut self, value: T);
 }
 
 pub trait VolatileAccess: Sealed {}
 impl<T> VolatileAccess for T where T: Sealed {}
 
-unsafe impl<T: Copy> VolatileRead<T> for Volatile<T, Read> {
-    fn read_volatile(&self) -> T {
+impl<T: Copy> VolatileRead<T> for Volatile<T, Read> {
+    fn read(&self) -> T {
         unsafe { core::ptr::read_volatile(&raw const self.inner) }
     }
 }
 
-unsafe impl<T> UnsafeVolatileRead<T> for Volatile<T, Read> {
-    unsafe fn read_volatile_noncopy(&self) -> T {
+impl<T> UnsafeVolatileRead<T> for Volatile<T, Read> {
+    unsafe fn read_noncopy(&self) -> T {
         unsafe { core::ptr::read_volatile(&raw const self.inner) }
     }
 }
 
-unsafe impl<T> VolatileWrite<T> for VolatileMut<T, Write> {
-    fn write_volatile(&mut self, value: T) {
+impl<T> VolatileWrite<T> for VolatileMut<T, Write> {
+    fn write(&mut self, value: T) {
         unsafe { core::ptr::write_volatile(self.inner.get(), value) }
     }
 }
 
-unsafe impl<T: Copy> VolatileRead<T> for Volatile<T, ReadWrite> {
-    fn read_volatile(&self) -> T {
+impl<T: Copy> VolatileRead<T> for Volatile<T, ReadWrite> {
+    fn read(&self) -> T {
         unsafe { core::ptr::read_volatile(&raw const self.inner) }
     }
 }
 
-unsafe impl<T> UnsafeVolatileRead<T> for Volatile<T, ReadWrite> {
-    unsafe fn read_volatile_noncopy(&self) -> T {
+impl<T> UnsafeVolatileRead<T> for Volatile<T, ReadWrite> {
+    unsafe fn read_noncopy(&self) -> T {
         unsafe { core::ptr::read_volatile(&raw const self.inner) }
     }
 }
 
-unsafe impl<T> VolatileWrite<T> for VolatileMut<T, ReadWrite> {
-    fn write_volatile(&mut self, value: T) {
+impl<T> VolatileWrite<T> for VolatileMut<T, ReadWrite> {
+    fn write(&mut self, value: T) {
         unsafe { core::ptr::write_volatile(self.inner.get(), value) }
     }
 }
@@ -84,6 +98,8 @@ mod sealed {
     impl Sealed for Read {}
     impl Sealed for Write {}
     impl Sealed for ReadWrite {}
+    impl<T, A: Sealed> Sealed for Volatile<T, A> {}
+    impl<T, A: Sealed> Sealed for VolatileMut<T, A> {}
 }
 
 #[repr(transparent)]

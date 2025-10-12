@@ -7,8 +7,8 @@ pub use error::*;
 
 use crate::Align16;
 use crate::mailbox::messages::*;
+use crate::mem::volatile::*;
 use crate::mem::{ArmAddress, Physical};
-use crate::volatile::*;
 
 pub(crate) const MAIL_BASE: ArmAddress<Physical> = ArmAddress::new(0x3F00B880);
 
@@ -49,7 +49,7 @@ impl<T: MailboxChannel> MailboxMessage for MessageBatch<T> {
         T::CHANNEL
     }
     fn status(&self) -> crate::mailbox::RequestStatus {
-        crate::mailbox::RequestStatus::from(self.status.read_volatile())
+        crate::mailbox::RequestStatus::from(self.status.read())
     }
 }
 
@@ -71,14 +71,18 @@ impl<T: MailboxChannel> MessageBatch<T> {
         Self {
             size: Volatile::new((core::mem::size_of::<Self>()) as u32),
             status: Volatile::new(0),
-            messages: messages,
+            messages,
             end_tag: 0,
             _padding: 0,
         }
     }
 
+    pub const fn new_aligned(messages: T) -> Align16<Self> {
+        Align16::new(Self::new(messages))
+    }
+
     pub fn read_status(&self) -> u32 {
-        self.status.read_volatile()
+        self.status.read()
     }
 
     pub fn inner(&self) -> &T {

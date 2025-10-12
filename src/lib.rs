@@ -14,7 +14,6 @@ pub mod mailbox;
 pub mod mem;
 pub mod nv;
 pub mod shader;
-pub mod volatile;
 
 pub use align::*;
 pub use context::*;

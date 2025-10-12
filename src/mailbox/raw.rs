@@ -3,7 +3,7 @@ use core::{cell::UnsafeCell, ptr};
 
 use super::MailboxStatus;
 
-use crate::volatile::*;
+use crate::mem::volatile::*;
 
 #[repr(C)]
 pub struct Mailbox {
@@ -22,26 +22,11 @@ impl core::fmt::Debug for Mailbox {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         unsafe {
             f.debug_struct("RawMailbox")
-                .field(
-                    "read",
-                    &format_args!("0x{:08x}", &self.read.read_volatile()),
-                )
-                .field(
-                    "poll",
-                    &format_args!("0x{:08x}", &self.poll.read_volatile()),
-                )
-                .field(
-                    "sender",
-                    &format_args!("0x{:08x}", &self.sender.read_volatile()),
-                )
-                .field(
-                    "status",
-                    &format_args!("0x{:08x}", &self.status.read_volatile()),
-                )
-                .field(
-                    "config",
-                    &format_args!("0x{:08x}", &self.config.read_volatile()),
-                )
+                .field("read", &format_args!("0x{:08x}", &self.read.read()))
+                .field("poll", &format_args!("0x{:08x}", &self.poll.read()))
+                .field("sender", &format_args!("0x{:08x}", &self.sender.read()))
+                .field("status", &format_args!("0x{:08x}", &self.status.read()))
+                .field("config", &format_args!("0x{:08x}", &self.config.read()))
                 .field(
                     "write",
                     &format_args!(
@@ -56,7 +41,7 @@ impl core::fmt::Debug for Mailbox {
 
 impl Mailbox {
     pub fn read(&self) -> u32 {
-        self.read.read_volatile()
+        self.read.read()
     }
 
     /// Writes data to the `write` register of the mailbox.
@@ -68,11 +53,11 @@ impl Mailbox {
     ///
     /// The caller must ensure that the value being written is valid.
     pub unsafe fn write(&mut self, value: u32) {
-        self.write.write_volatile(value)
+        self.write.write(value)
     }
 
     pub fn status(&self) -> u32 {
-        self.status.read_volatile()
+        self.status.read()
     }
 
     pub fn is_full(&self) -> bool {
