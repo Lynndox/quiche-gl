@@ -15,6 +15,22 @@ pub struct ArmAddress<A> {
     _phantom: PhantomData<A>,
 }
 
+impl core::fmt::Debug for ArmAddress<Physical> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ArmAddress<Physical>")
+            .field("addr", &format_args!("{:#010x}", self.addr))
+            .finish()
+    }
+}
+
+impl core::fmt::Debug for ArmAddress<Virtual> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ArmAddress<Virtual>")
+            .field("addr", &format_args!("{:#010x}", self.addr))
+            .finish()
+    }
+}
+
 impl<A> ArmAddress<A> {
     pub const fn new(addr: usize) -> Self {
         Self {
@@ -32,9 +48,9 @@ impl<A> Deref for ArmAddress<A> {
     }
 }
 
-impl<T> From<&T> for ArmAddress<Virtual> {
-    fn from(value: &T) -> Self {
-        Self::new(&raw const *value as usize)
+impl<T> From<*const T> for ArmAddress<Virtual> {
+    fn from(value: *const T) -> Self {
+        Self::new(value.addr())
     }
 }
 
@@ -59,6 +75,14 @@ pub struct Virtual;
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BusAddress(pub(crate) u32);
+
+impl core::fmt::Debug for BusAddress {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_tuple("BusAddress")
+            .field(&format_args!("{:#010x}", self.0))
+            .finish()
+    }
+}
 
 impl BusAddress {
     pub const fn with_channel(mut self, channel: Channel) -> Self {

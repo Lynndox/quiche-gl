@@ -1,21 +1,62 @@
 use crate::mem::{ArmAddress, BusAddress, Physical, Virtual};
+use core::{cell::UnsafeCell, ptr};
 
 use super::MailboxStatus;
 
+use crate::volatile::*;
+
 #[repr(C)]
-pub struct RawMailbox {
-    read: u32,
-    _unused: [u32; 3],
-    poll: u32,
-    sender: u32,
-    status: u32,
-    config: u32,
-    write: u32,
+pub struct Mailbox {
+    read: Volatile<u32, Read>,
+    _unused: u32,
+    _unused1: u32,
+    _unused2: u32,
+    poll: Volatile<u32, Read>,
+    sender: Volatile<u32, Read>,
+    status: Volatile<u32, Read>,
+    config: Volatile<u32, Read>,
+    write: VolatileMut<u32, Write>,
 }
 
-impl RawMailbox {
+impl core::fmt::Debug for Mailbox {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        unsafe {
+            f.debug_struct("RawMailbox")
+                .field(
+                    "read",
+                    &format_args!("0x{:08x}", &self.read.read_volatile()),
+                )
+                .field(
+                    "poll",
+                    &format_args!("0x{:08x}", &self.poll.read_volatile()),
+                )
+                .field(
+                    "sender",
+                    &format_args!("0x{:08x}", &self.sender.read_volatile()),
+                )
+                .field(
+                    "status",
+                    &format_args!("0x{:08x}", &self.status.read_volatile()),
+                )
+                .field(
+                    "config",
+                    &format_args!("0x{:08x}", &self.config.read_volatile()),
+                )
+                .field(
+                    "write",
+                    &format_args!(
+                        "0x{:08x} <readonly>",
+                        ptr::read_volatile(&*self.write.as_ptr())
+                    ),
+                )
+                .finish()
+        }
+    }
+}
+
+impl Mailbox {
     pub fn read(&self) -> u32 {
-        unsafe { ::core::ptr::read_volatile(&self.read) }
+        self.read.read_volatile()
     }
 
     /// Writes data to the `write` register of the mailbox.
@@ -27,21 +68,21 @@ impl RawMailbox {
     ///
     /// The caller must ensure that the value being written is valid.
     pub unsafe fn write(&mut self, value: u32) {
-        unsafe {
-            ::core::ptr::write_volatile(&mut self.write, value);
-        }
+        self.write.write_volatile(value)
     }
 
     pub fn status(&self) -> u32 {
-        unsafe { ::core::ptr::read_volatile(&self.status) }
+        self.status.read_volatile()
     }
 
     pub fn is_full(&self) -> bool {
-        self.status() == MailboxStatus::Full
+        (self.status() & MailboxStatus::Full as u32)
+            == MailboxStatus::Full as u32
     }
 
     pub fn is_empty(&self) -> bool {
-        self.status() == MailboxStatus::Empty
+        (self.status() & MailboxStatus::Empty as u32)
+            == MailboxStatus::Empty as u32
     }
 
     /// Writes a bus address to the mailbox's `write` register.
@@ -65,6 +106,6 @@ impl RawMailbox {
 ///
 /// The caller must ensure that only one core is accessing the mailbox at a
 /// time.
-pub const unsafe fn mailbox(addr: ArmAddress<Virtual>) -> &'static RawMailbox {
-    unsafe { &*(addr.addr as *const RawMailbox) }
+pub const unsafe fn mailbox(addr: ArmAddress<Virtual>) -> &'static mut Mailbox {
+    unsafe { &mut *(addr.addr as *mut Mailbox) }
 }

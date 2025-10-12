@@ -8,6 +8,7 @@ pub use error::*;
 use crate::Align16;
 use crate::mailbox::messages::*;
 use crate::mem::{ArmAddress, Physical};
+use crate::volatile::*;
 
 pub(crate) const MAIL_BASE: ArmAddress<Physical> = ArmAddress::new(0x3F00B880);
 
@@ -19,11 +20,11 @@ pub trait MailboxChannel: Sealed {
     const CHANNEL: Channel;
 }
 
-pub trait MailboxMessage: Sealed {
+pub trait MailboxMessage: Sized + Sealed {
     fn channel(&self) -> Channel;
     fn status(&self) -> crate::mailbox::RequestStatus;
     fn size(&self) -> u32 {
-        (core::mem::size_of_val(self) / 4) as u32
+        (core::mem::size_of_val(self)) as u32
     }
 
     /// Gets the raw bytes that make up this struct.
@@ -36,7 +37,7 @@ pub trait MailboxMessage: Sealed {
         unsafe {
             core::slice::from_raw_parts(
                 &raw const *self as *const u32,
-                self.size() as _,
+                core::mem::size_of::<Self>() / core::mem::size_of::<u32>(),
             )
         }
     }
@@ -48,33 +49,40 @@ impl<T: MailboxChannel> MailboxMessage for MessageBatch<T> {
         T::CHANNEL
     }
     fn status(&self) -> crate::mailbox::RequestStatus {
-        crate::mailbox::RequestStatus::from(unsafe {
-            ::core::ptr::read_volatile(&raw const self.status)
-        })
+        crate::mailbox::RequestStatus::from(self.status.read_volatile())
     }
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct MessageBatch<T: MailboxChannel> {
-    size: u32,
-    status: u32,
+    size: Volatile<u32, Read>,
+    status: Volatile<u32, Read>,
     messages: T,
     end_tag: u32,
+    _padding: u64,
 }
 
 impl<T: MailboxChannel> MessageBatch<T> {
     pub const fn new(messages: T) -> Self {
         const {
-            assert!(
-                ((core::mem::size_of::<Self>() / 4) - 1) <= u32::MAX as usize
-            );
+            assert!((core::mem::size_of::<Self>()) <= u32::MAX as usize);
         }
         Self {
-            size: (core::mem::size_of::<Self>() / 4) as u32,
-            status: 0,
-            messages,
+            size: Volatile::new((core::mem::size_of::<Self>()) as u32),
+            status: Volatile::new(0),
+            messages: messages,
             end_tag: 0,
+            _padding: 0,
         }
+    }
+
+    pub fn read_status(&self) -> u32 {
+        self.status.read_volatile()
+    }
+
+    pub fn inner(&self) -> &T {
+        &self.messages
     }
 }
 
@@ -120,7 +128,7 @@ impl PartialEq<MailboxStatus> for u32 {
 }
 
 #[repr(u32)]
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum RequestStatus {
     Request = 0x00000000,
     Success = 0x80000000,

@@ -1,8 +1,10 @@
 use crate::Align16;
 use crate::mailbox::messages::*;
-use crate::mailbox::raw::RawMailbox;
+use crate::mailbox::raw::Mailbox;
+use crate::mailbox::raw::mailbox;
 use crate::mailbox::*;
 use crate::mem::*;
+use crate::volatile::VolatileRead;
 use crate::{Result, display::Display, mem::mapper::*};
 
 mod state;
@@ -38,39 +40,35 @@ impl<S, M: MemoryMapper> Context<S, M> {
         self.mapper.phys_to_virt_addr(addr.into())
     }
 
-    pub fn send_mailbox_message<T: MailboxMessage>(
+    pub fn send_mailbox_message<T: MailboxChannel>(
         &mut self,
-        message: &Align16<T>,
+        message: *const Align16<MessageBatch<T>>,
     ) -> Result<()>
     where
         crate::Error: From<<M as MemoryMapper>::Error>,
         <M as MemoryMapper>::Error: Into<crate::Error>,
     {
-        let mut mailbox = unsafe {
-            &mut *(*self.phys_to_virt_addr(MAIL_BASE)? as *mut RawMailbox)
-        };
+        let message_ref = unsafe { message.as_ref().unwrap_unchecked() };
+        let mailbox = unsafe { mailbox(self.phys_to_virt_addr(MAIL_BASE)?) };
 
-        let msg_phys_addr = self.virt_to_phys_addr(message)?;
-        let msg_phys_addr_trunc = *msg_phys_addr as u32;
+        let msg_phys_addr = self.virt_to_phys_addr(message.addr())?;
+        let msg_channel_addr =
+            (msg_phys_addr.addr & !0xF) | message_ref.channel() as u32 as usize;
 
-        // TODO: spin loop bad, usually. but the GPU should respond quick enough
-        // that it doesn't matter. measure and find out.
         while mailbox.is_full() {
             core::hint::spin_loop();
         }
 
-        unsafe { mailbox.write(msg_phys_addr_trunc) };
+        unsafe { mailbox.write(msg_channel_addr as u32) };
 
         loop {
-            // TODO: again, spin loop bad, usually. but the GPU should respond
-            // quick enough that it doesn't matter. measure and find
-            // out.
             while mailbox.is_empty() {
                 core::hint::spin_loop();
             }
 
-            if mailbox.read() == msg_phys_addr_trunc {
-                return match message.status() {
+
+            if mailbox.read() == msg_channel_addr as u32 {
+                return match message_ref.status() {
                     RequestStatus::Request => Err(MailboxError::SendMessage(
                         "Message still contains a request?!",
                     )),
@@ -109,7 +107,10 @@ where
         double_buffer: bool,
     ) -> Result<Context<Initialized, M>> {
         unsafe {
-            self.send_mailbox_message(&InitQpu::message(250))?;
+            {
+                let qpu_init_msg = InitQpu::message(250, false);
+                self.send_mailbox_message(&qpu_init_msg)?;
+            }
 
             let mut init_msg = InitFramebuffer::message(
                 self.display.width,
@@ -119,13 +120,9 @@ where
             );
             self.send_mailbox_message(&init_msg)?;
 
-            let mut buf_ptr = init_msg.buffer_ptr();
-            while *buf_ptr == 0 {
-                self.send_mailbox_message(&init_msg)?;
-                buf_ptr = init_msg.buffer_ptr();
-            }
-
-            let buf_size = init_msg.alloc_buffer.buf_size;
+            let mut buf_ptr = init_msg.inner().buffer_ptr();
+            let buf_size =
+                init_msg.inner().alloc_buffer.buf_size.read_volatile();
 
             // TODO: should this be considered an error?
             //
@@ -145,8 +142,10 @@ where
                 buf_size as usize,
             );
 
-            self.display.virt_width = init_msg.virt_res.width;
-            self.display.virt_height = init_msg.virt_res.height;
+            self.display.virt_width =
+                init_msg.inner().virt_res.width.read_volatile();
+            self.display.virt_height =
+                init_msg.inner().virt_res.height.read_volatile();
 
             Ok(Context {
                 display: self.display,

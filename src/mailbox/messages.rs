@@ -19,12 +19,13 @@ trait_impl! {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct InitFramebuffer {
-    pub(crate) phys_display: SetPhysicalDisplay,
-    pub(crate) virt_res: SetVirtualResolution,
-    pub(crate) bit_depth: SetBitDepth,
-    pub(crate) virt_offset: SetVirtualOffset,
-    pub(crate) alloc_buffer: AllocateBuffer,
+    pub phys_display: SetPhysicalDisplay,
+    pub virt_res: SetVirtualResolution,
+    pub bit_depth: SetBitDepth,
+    pub virt_offset: SetVirtualOffset,
+    pub alloc_buffer: AllocateBuffer,
 }
 
 impl InitFramebuffer {
@@ -66,31 +67,34 @@ impl InitFramebuffer {
 
 impl InitFramebuffer {
     pub fn buffer_ptr(&self) -> BusAddress {
-        BusAddress(unsafe {
-            core::ptr::read_volatile(&raw const self.alloc_buffer.base_addr)
-        })
+        BusAddress(unsafe { self.alloc_buffer.base_addr.read_volatile() })
     }
 }
 
-#[repr(C, packed)]
+#[repr(C)]
+#[derive(Debug)]
 pub struct InitQpu {
-    clock_rate: SetClockRate,
-    enable_qpu: EnableQpu,
+    pub clock_rate: SetClockRate,
+    pub enable_qpu: EnableQpu,
 }
 
 impl InitQpu {
-    pub const fn new(clock_rate_mhz: u32) -> Self {
+    pub const fn new(clock_rate_mhz: u32, skip_turbo: bool) -> Self {
         Self {
             clock_rate: SetClockRate::new(
                 Clock::V3D,
                 clock_rate_mhz * 1_000 * 1_000,
+                skip_turbo,
             ),
             enable_qpu: EnableQpu::new(true),
         }
     }
 
-    pub const fn message(clock_rate_mhz: u32) -> Align16<MessageBatch<Self>> {
-        align16!(MessageBatch::new(Self::new(clock_rate_mhz)))
+    pub const fn message(
+        clock_rate_mhz: u32,
+        skip_turbo: bool,
+    ) -> Align16<MessageBatch<Self>> {
+        align16!(MessageBatch::new(Self::new(clock_rate_mhz, skip_turbo)))
     }
 }
 
@@ -100,7 +104,7 @@ mod tests {
 
     #[test]
     fn qpu_enable_message() {
-        let qpu_en = InitQpu::message(250);
+        let qpu_en = InitQpu::message(250, false);
         const EXPECTED: &[u32] = &[
             12,
             0,
@@ -153,6 +157,26 @@ mod tests {
 
         let msg = InitFramebuffer::message(640, 480, 32, false);
         assert_eq!(unsafe { msg.as_bytes() }, EXPECTED);
+    }
+
+    #[test]
+    fn set_clock_message() {
+        const EXPECTED: &[u32] = &[
+            0x00000028, 0x00000000, 0x00038002, 0x00000008, 0x00000008,
+            0x00000003, 0x47868c00, 0x00000000, 0x00000000, 0x00000000,
+        ];
+
+        let msg = align16!(MessageBatch::new(SetClockRate::new(
+            3, 1200000000, false
+        )));
+
+        // assert_eq!(
+        //     core::mem::size_of_val(&msg),
+        //     core::mem::size_of_val(EXPECTED),
+        // );
+        unsafe {
+            assert_eq!(msg.as_bytes(), EXPECTED);
+        }
     }
 
     #[test]

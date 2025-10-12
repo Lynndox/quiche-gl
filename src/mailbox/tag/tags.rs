@@ -11,19 +11,34 @@ macro_rules! tag_impl {
 		<Self as $crate::mailbox::MailboxChannel>::CHANNEL
 	    }
             fn status(&self) -> $crate::mailbox::RequestStatus {
-                $crate::mailbox::RequestStatus::from(unsafe {
-                    ::core::ptr::read_volatile(&raw const self.status)
-                })
+                $crate::mailbox::RequestStatus::from(
+		    $crate::volatile::VolatileRead::read_volatile(&self.status)
+		)
             }
         }
     };
+    (@debugimpl $n:ident { $($v:ident),* }) => {
+	impl ::core::fmt::Debug for $n {
+	    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+		unsafe {
+		    f.debug_struct(stringify!($n))
+			$(.field(stringify!($v), &format_args!("0x{:08x}", &*self.$v)))*
+			.finish()
+		}
+	    }
+	}
+    };
+    (@getimpl $name:ident { $($field:ident),* }) => {
+    impl $name {
+
+    }};
     (@makestruct $n:ident { $($v:ident),* }) => {
-	#[repr(C)]
+	#[repr(C, align(4))]
 	pub struct $n {
 	    tag: u32,
 	    size: u32,
-	    status: $crate::mailbox::RequestStatus,
-	    $(pub $v: u32,)*
+	    pub status: $crate::volatile::Volatile<u32, $crate::volatile::Read>,
+	    $(pub $v: $crate::volatile::Volatile<u32, $crate::volatile::ReadWrite>,)*
 	}
     };
     (@argty $t:ty) => { $t };
@@ -36,12 +51,13 @@ macro_rules! tag_impl {
 		Self {
 		    tag: $crate::mailbox::tag::Tag::$n,
 		    size: $size,
-		    status: $crate::mailbox::RequestStatus::Request,
-		    $($v: $v as u32),*
+		    status: $crate::volatile::Volatile::new($size),
+		    $($v: $crate::volatile::Volatile::new($v as u32)),*
 		}
 	    }
 	}
 	tag_impl!(@traitimpl $n $channel);
+	tag_impl!(@debugimpl $n { $($v),* });
 	)*
     };
 }
@@ -52,18 +68,19 @@ macro_rules! tag_impl_noinput {
     ($($n:ident { channel = $channel:path, size = $size:literal$(, $($v:ident $(= $val:literal)?),*)? $(,)? } $(,)?),*) => {
 	$(
 	tag_impl!(@makestruct $n { $($($v),*),* });
-	tag_impl!(@traitimpl $n $channel);
 	impl $n {
 	    pub const fn new() -> Self {
 		Self {
 		    tag: $crate::mailbox::tag::Tag::$n,
 		    size: $size,
-		    status: $crate::mailbox::RequestStatus::Request,
-		    $($($v: tag_impl_noinput!(@val $($val)*)),*)*
+		    status: $crate::volatile::Volatile::new($size),
+		    $($($v: $crate::volatile::Volatile::new(tag_impl_noinput!(@val $($val)*))),*)*
 		}
 	    }
 	}
 
+	tag_impl!(@traitimpl $n $channel);
+	tag_impl!(@debugimpl $n { $($($v),*)* });
 	impl Default for $n {
 	    fn default() -> Self {
 		Self::new()
@@ -72,12 +89,14 @@ macro_rules! tag_impl_noinput {
     };
 }
 
+// TODO: add read/write declarations to the fields
 tag_impl! {
     SetPhysicalDisplay { channel = Channel::Prop, size = 8, width, height },
     SetVirtualResolution { channel = Channel::Prop, size = 8, width, height },
     SetBitDepth { channel = Channel::Prop, size = 4, bit_depth },
     SetVirtualOffset { channel = Channel::Prop, size = 8, offset_x, offset_y },
-    SetClockRate { channel = Channel::Prop, size = 8, clock, rate_mhz },
+    GetClockRate { channel = Channel::Prop, size = 8, clock, rate_mhz },
+    SetClockRate { channel = Channel::Prop, size = 12, clock, rate_mhz, skip_turbo: bool },
     EnableQpu { channel = Channel::Prop, size = 4, enable: bool }
 }
 

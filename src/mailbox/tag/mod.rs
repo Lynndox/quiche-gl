@@ -179,23 +179,31 @@ pub struct Clock;
 #[rustfmt::skip]
 impl Clock {
 	/// EMMC Clock ID
-	pub const EMMC: u32  = 0x1;
+	pub const EMMC: u32      = 0x1;
 	/// UART Clock ID
-	pub const UART: u32  = 0x2;
+	pub const UART: u32      = 0x2;
 	/// ARM Clock ID
-	pub const ARM: u32   = 0x3;
+	pub const ARM: u32       = 0x3;
 	/// CORE Clock ID
-	pub const CORE: u32  = 0x4;
+	pub const CORE: u32      = 0x4;
 	/// V3D Clock ID
-	pub const V3D: u32   = 0x5;
+	pub const V3D: u32       = 0x5;
 	/// H264 Clock ID
-	pub const H264: u32  = 0x6;
+	pub const H264: u32      = 0x6;
 	/// ISP Clock ID
-	pub const ISP: u32   = 0x7;
+	pub const ISP: u32       = 0x7;
 	/// SDRAM Clock ID
-	pub const SDRAM: u32 = 0x8;
+	pub const SDRAM: u32     = 0x8;
 	/// PIXEL Clock ID
-	pub const PIXEL: u32 = 0x9;
+	pub const PIXEL: u32     = 0x9;
 	/// PWM Clock ID
-	pub const PWM: u32   = 0xA;
+	pub const PWM: u32       = 0xA;
+	/// HEVC Clock ID
+	pub const HEVC: u32      = 0xB;
+	/// EMMC2 Clock ID
+	pub const EMMC2: u32     = 0xC;
+	/// M2MC Clock ID
+	pub const M2MC: u32      = 0xD;
+	/// PIXEL_BVB Clock ID
+	pub const PIXEL_BVB: u32 = 0xE;
 }

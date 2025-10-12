@@ -14,6 +14,7 @@ pub mod mailbox;
 pub mod mem;
 pub mod nv;
 pub mod shader;
+pub mod volatile;
 
 pub use align::*;
 pub use context::*;
@@ -39,6 +40,6 @@ const VC_BUS_ADDR: u32 = 0x3FFFFFFF;
 #[macro_export]
 macro_rules! align16 {
     ($($t:tt)*) => {
-        $crate::align::Align16::new($($t)*)
+        $crate::Align16::new($($t)*)
     };
 }
