@@ -4,7 +4,7 @@ pub use flags::*;
 use super::ControlCode;
 
 #[repr(C, packed)]
-pub struct TileBinningControlList<P: GLPrimitives> {
+pub struct TileBinningControlList<P: Primitive> {
     bin_mode_config_code: u8,
     bin_mode_config: TileBinningModeConfig,
     start_tile_binning: u8,
@@ -21,7 +21,7 @@ pub struct TileBinningControlList<P: GLPrimitives> {
     flush: u8,
 }
 
-impl<P: GLPrimitives> TileBinningControlList<P> {
+impl<P: Primitive> TileBinningControlList<P> {
     pub fn new(
         bin_mode_config: TileBinningModeConfig,
         clip_window: ClipWindowConfig,
@@ -103,10 +103,10 @@ pub struct IndexedPrimitiveList {
     pub max_index: u32,
 }
 
-pub trait GLPrimitives {
+pub trait Primitive {
     const FLAG: u8;
 }
 
-impl GLPrimitives for IndexedPrimitiveList {
+impl Primitive for IndexedPrimitiveList {
     const FLAG: u8 = ControlCode::IndexedPrimitiveList;
 }
