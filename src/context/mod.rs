@@ -1,4 +1,8 @@
+use core::marker::PhantomData;
+use core::ptr::NonNull;
+
 use crate::Align16;
+use crate::FrameBuffer;
 use crate::mailbox::messages::*;
 use crate::mailbox::raw::Mailbox;
 use crate::mailbox::raw::mailbox;
@@ -7,19 +11,167 @@ use crate::mem::volatile::VolatileRead;
 use crate::mem::*;
 use crate::{Result, display::Display, mem::mapper::*};
 
-mod state;
+mod error;
+pub mod state;
+pub use error::*;
+
 use state::*;
 
-#[derive(Debug)]
-pub struct Context<S, M: MemoryMapper> {
+pub struct Context<S, M> {
     display: Display,
+    framebuffer: FrameBuffer,
     mapper: M,
-    state: S,
+    _state: S,
+}
+
+impl<S: core::fmt::Debug, M: core::fmt::Debug> core::fmt::Debug
+    for Context<S, M>
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut debug_fmt = f.debug_struct("Context");
+        debug_fmt
+            .field("display", &self.display)
+            .field("framebuffer", &self.framebuffer)
+            .field("mapper", &self.mapper)
+            .field("state", &self._state)
+            .finish()
+    }
+}
+
+impl<M: MemoryMapper> Context<Uninitialized, M> {
+    pub const fn new(
+        width: u32,
+        height: u32,
+        bit_depth: u32,
+        mapper: M,
+    ) -> Self {
+        Self {
+            display: Display::new(width, height, bit_depth),
+            framebuffer: unsafe { FrameBuffer::empty() },
+            mapper,
+            _state: Uninitialized,
+        }
+    }
 }
 
 impl Context<Uninitialized, IdentityMapper> {
-    pub const fn new(width: u32, height: u32, bit_depth: u32) -> Self {
-        Self::with_mapper(width, height, bit_depth, IdentityMapper)
+    pub const fn new_identity_mapped(
+        width: u32,
+        height: u32,
+        bit_depth: u32,
+    ) -> Self {
+        Self::new(width, height, bit_depth, IdentityMapper)
+    }
+}
+
+impl<M: MemoryMapper> Context<Uninitialized, M>
+where
+    crate::Error: From<M::Error>,
+{
+    pub fn initialize(
+        mut self,
+        num_buffers: u32,
+    ) -> Result<Context<Initialized, M>> {
+        {
+            let qpu_init_msg = InitQpu::message(250, false);
+            self.send_mailbox_message(&qpu_init_msg)?;
+        }
+
+        let mut init_msg = InitFramebuffer::message(
+            self.display.width,
+            self.display.height,
+            self.display.bit_depth,
+            num_buffers,
+        );
+        self.send_mailbox_message(&init_msg)?;
+
+        let mut buf_ptr = init_msg.buffer_ptr();
+        let buf_size = init_msg.alloc_buffer.buf_size.read();
+        let buf_addr = self.phys_to_virt_addr(buf_ptr)?;
+
+        // TODO: should this be considered an error?
+        //
+        // if buf_size == 0 {
+        //     // FIXME: i need to reorganize the error types anyway, so i
+        // can't be bothered to     // write one for this
+        //     // and really, i'm just going to be panicking in main at this
+        // point anyway
+        //
+        //     panic!("recieved a framebuffer size of 0 from the GPU");
+        // }
+
+        let buf_ptr = NonNull::new(*buf_addr as *mut u32)
+            .ok_or(InitializeError::NullFrameBufferPtr)?;
+        self.display.virt_width = init_msg.inner().virt_res.width.read();
+        self.display.virt_height = init_msg.inner().virt_res.height.read();
+
+        let framebuffer = FrameBuffer {
+            ptr: buf_ptr,
+            size: buf_size as usize,
+            screen_size: (buf_size / num_buffers) as usize,
+            num_buffers,
+            curr_screen: 0,
+            width: self.display.width,
+            height: self.display.height,
+            bit_depth: self.display.bit_depth,
+        };
+
+        Ok(Context {
+            display: self.display,
+            framebuffer,
+            mapper: self.mapper,
+            _state: Initialized,
+        })
+    }
+}
+
+impl<M: MemoryMapper> Context<Initialized, M>
+where
+    crate::Error: From<M::Error>,
+{
+    /// Returns a reference to the raw underlying buffer for the current screen.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the framebuffer is initialized and the CPU
+    /// and GPU are not performing read or write operations on the buffer
+    /// simultaneously. Doing so is undefined behavior.
+    pub unsafe fn curr_screen_buffer(&mut self) -> &[u32] {
+        unsafe { self.framebuffer.curr_screen_buffer() }
+    }
+
+    /// Returns a mutable reference to the raw underlying buffer for the current
+    /// screen.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the framebuffer is initialized and the CPU
+    /// and GPU are not performing read or write operations on the buffer
+    /// simultaneously. Doing so is undefined behavior.
+    pub unsafe fn curr_screen_buffer_mut(&mut self) -> &mut [u32] {
+        unsafe { self.framebuffer.curr_screen_buffer_mut() }
+    }
+
+    /// Returns a reference to the raw underlying buffer.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the framebuffer is initialized and the CPU
+    /// and GPU are not performing read or write operations on the buffer
+    /// simultaneously. Doing so is undefined behavior.
+    pub unsafe fn full_buffer(&mut self) -> &[u32] {
+        unsafe { self.framebuffer.full_buffer() }
+    }
+
+    /// Returns a mutable reference to the raw underlying buffer.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the framebuffer is initialized and the CPU
+    /// and GPU are not performing read or write operations on the buffer
+    /// simultaneously. Doing so is undefined behavior.
+    pub unsafe fn full_buffer_mut(&mut self) -> &mut [u32] {
+        unsafe { self.framebuffer.full_buffer_mut() }
     }
 }
 
@@ -79,74 +231,6 @@ impl<S, M: MemoryMapper> Context<S, M> {
                 }
                 .map_err(Into::into);
             }
-        }
-    }
-}
-
-impl<M: MemoryMapper> Context<Uninitialized, M>
-where
-    crate::Error: From<<M as MemoryMapper>::Error>,
-{
-    pub const fn with_mapper(
-        width: u32,
-        height: u32,
-        bit_depth: u32,
-        mapper: M,
-    ) -> Self {
-        Self {
-            display: Display::new(width, height, bit_depth),
-            mapper,
-            state: Uninitialized,
-        }
-    }
-
-    pub fn initialize(
-        mut self,
-        double_buffer: bool,
-    ) -> Result<Context<Initialized, M>> {
-        unsafe {
-            {
-                let qpu_init_msg = InitQpu::message(250, false);
-                self.send_mailbox_message(&qpu_init_msg)?;
-            }
-
-            let mut init_msg = InitFramebuffer::message(
-                self.display.width,
-                self.display.height,
-                self.display.bit_depth,
-                double_buffer,
-            );
-            self.send_mailbox_message(&init_msg)?;
-
-            let mut buf_ptr = init_msg.buffer_ptr();
-            let buf_size = init_msg.alloc_buffer.buf_size.read();
-
-            // TODO: should this be considered an error?
-            //
-            // if buf_size == 0 {
-            //     // FIXME: i need to reorganize the error types anyway, so i
-            // can't be bothered to     // write one for this
-            //     // and really, i'm just going to be panicking in main at this
-            // point anyway
-            //
-            //     panic!("recieved a framebuffer size of 0 from the GPU");
-            // }
-
-            let buf_ptr = self.phys_to_virt_addr(buf_ptr)?;
-
-            let framebuffer = core::slice::from_raw_parts_mut(
-                *buf_ptr as *mut u32,
-                buf_size as usize,
-            );
-
-            self.display.virt_width = init_msg.virt_res.width.read();
-            self.display.virt_height = init_msg.virt_res.height.read();
-
-            Ok(Context {
-                display: self.display,
-                mapper: self.mapper,
-                state: Initialized { framebuffer },
-            })
         }
     }
 }

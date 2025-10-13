@@ -1,16 +1,19 @@
-//! Typestate patterns for a QuicheGL context
+use core::fmt;
 
 #[derive(Debug)]
 pub struct Uninitialized;
 
-pub struct Initialized {
-    pub framebuffer: &'static mut [u32],
+impl fmt::Display for Uninitialized {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Uninitialized")
+    }
 }
 
-impl core::fmt::Debug for Initialized {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("Initialized")
-            .field("framebuffer_ptr", &self.framebuffer.as_ptr())
-            .finish()
+#[derive(Debug)]
+pub struct Initialized;
+
+impl fmt::Display for Initialized {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Initialized")
     }
 }

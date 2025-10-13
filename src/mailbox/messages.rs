@@ -33,13 +33,13 @@ impl InitFramebuffer {
         width: u32,
         height: u32,
         bit_depth: u32,
-        double_buffer: bool,
+        num_buffers: u32,
     ) -> Self {
         const {
             assert!(core::mem::size_of::<Self>() <= (u32::MAX as usize));
         }
 
-        let virt_height = if double_buffer { height * 2 } else { height };
+        let virt_height = height * num_buffers;
 
         Self {
             phys_display: SetPhysicalDisplay::new(width, height),
@@ -54,13 +54,13 @@ impl InitFramebuffer {
         width: u32,
         height: u32,
         bit_depth: u32,
-        double_buffer: bool,
+        num_buffers: u32,
     ) -> Align16<MessageBatch<Self>> {
         MessageBatch::new_aligned(Self::new(
             width,
             height,
             bit_depth,
-            double_buffer,
+            num_buffers,
         ))
     }
 }
@@ -155,7 +155,7 @@ mod tests {
             0,
         ];
 
-        let msg = InitFramebuffer::message(640, 480, 32, false);
+        let msg = InitFramebuffer::message(640, 480, 32, 1);
         assert_eq!(unsafe { msg.as_bytes() }, EXPECTED);
     }
 
