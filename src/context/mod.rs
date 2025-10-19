@@ -139,7 +139,7 @@ where
                 (ptr.addr() + core::mem::size_of_val(&*list)) as u32,
             );
 
-            while V3D_BFC.read_volatile() == 0 {
+            while V3D_BFC.read_volatile() != 0 {
                 core::hint::spin_loop();
             }
         }
@@ -162,7 +162,7 @@ where
                 (ptr.addr() + core::mem::size_of_val(&*list)) as u32,
             );
 
-            while V3D_BFC.read_volatile() == 0 {
+            while V3D_BFC.read_volatile() != 0 {
                 core::hint::spin_loop();
             }
         }
