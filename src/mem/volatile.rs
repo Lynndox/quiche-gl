@@ -52,37 +52,49 @@ impl<T> VolatileAccess for T where T: Sealed {}
 
 impl<T: Copy> VolatileRead<T> for Volatile<T, Read> {
     fn read(&self) -> T {
-        unsafe { core::ptr::read_volatile(&raw const self.inner) }
-    }
-}
-
-impl<T> UnsafeVolatileRead<T> for Volatile<T, Read> {
-    unsafe fn read_noncopy(&self) -> T {
-        unsafe { core::ptr::read_volatile(&raw const self.inner) }
-    }
-}
-
-impl<T> VolatileWrite<T> for VolatileMut<T, Write> {
-    fn write(&mut self, value: T) {
-        unsafe { core::ptr::write_volatile(self.inner.get(), value) }
+        unsafe { core::ptr::read_volatile(&raw const self.value) }
     }
 }
 
 impl<T: Copy> VolatileRead<T> for Volatile<T, ReadWrite> {
     fn read(&self) -> T {
-        unsafe { core::ptr::read_volatile(&raw const self.inner) }
+        unsafe { core::ptr::read_volatile(&raw const self.value) }
+    }
+}
+
+impl<T> UnsafeVolatileRead<T> for Volatile<T, Read> {
+    unsafe fn read_noncopy(&self) -> T {
+        unsafe { core::ptr::read_volatile(&raw const self.value) }
     }
 }
 
 impl<T> UnsafeVolatileRead<T> for Volatile<T, ReadWrite> {
     unsafe fn read_noncopy(&self) -> T {
-        unsafe { core::ptr::read_volatile(&raw const self.inner) }
+        unsafe { core::ptr::read_volatile(&raw const self.value) }
+    }
+}
+
+impl<T: Copy> VolatileRead<T> for VolatileMut<T, ReadWrite> {
+    fn read(&self) -> T {
+        unsafe { core::ptr::read_volatile(self.addr.get()) }
+    }
+}
+
+impl<T> UnsafeVolatileRead<T> for VolatileMut<T, Read> {
+    unsafe fn read_noncopy(&self) -> T {
+        unsafe { core::ptr::read_volatile(self.addr.get()) }
+    }
+}
+
+impl<T> VolatileWrite<T> for VolatileMut<T, Write> {
+    fn write(&mut self, value: T) {
+        unsafe { core::ptr::write_volatile(self.addr.get(), value) }
     }
 }
 
 impl<T> VolatileWrite<T> for VolatileMut<T, ReadWrite> {
     fn write(&mut self, value: T) {
-        unsafe { core::ptr::write_volatile(self.inner.get(), value) }
+        unsafe { core::ptr::write_volatile(self.addr.get(), value) }
     }
 }
 
@@ -107,7 +119,7 @@ pub struct Volatile<T, A>
 where
     A: VolatileAccess,
 {
-    inner: T,
+    value: T,
     _phantom: PhantomData<A>,
 }
 
@@ -127,17 +139,17 @@ where
 {
     pub const fn new(value: T) -> Self {
         Self {
-            inner: value,
+            value,
             _phantom: PhantomData,
         }
     }
 
     pub(crate) unsafe fn as_ptr(&self) -> *const T {
-        &raw const self.inner
+        &raw const self.value
     }
 
     pub(crate) unsafe fn as_mut_ptr(&mut self) -> *mut T {
-        &raw mut self.inner
+        &raw mut self.value
     }
 }
 
@@ -148,7 +160,7 @@ where
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        &self.inner
+        &self.value
     }
 }
 
@@ -157,7 +169,7 @@ where
     A: VolatileAccess,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+        &mut self.value
     }
 }
 
@@ -166,7 +178,7 @@ pub struct VolatileMut<T, A>
 where
     A: VolatileAccess,
 {
-    inner: UnsafeCell<T>,
+    addr: UnsafeCell<T>,
     _phantom: PhantomData<A>,
 }
 
@@ -176,7 +188,7 @@ where
     A: VolatileAccess,
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let inner_ref = unsafe { self.inner.get().as_ref().unwrap_unchecked() };
+        let inner_ref = unsafe { self.addr.get().as_ref().unwrap_unchecked() };
         inner_ref.fmt(f)
     }
 }
@@ -187,16 +199,16 @@ where
 {
     pub const fn new(value: T) -> Self {
         Self {
-            inner: UnsafeCell::new(value),
+            addr: UnsafeCell::new(value),
             _phantom: PhantomData,
         }
     }
 
     pub(crate) unsafe fn as_ptr(&self) -> *const T {
-        self.inner.get() as *const T
+        self.addr.get() as *const T
     }
 
     pub(crate) unsafe fn as_mut_ptr(&mut self) -> *mut T {
-        self.inner.get()
+        self.addr.get()
     }
 }

@@ -1,8 +1,6 @@
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct TileBinningFlags8(u8);
-
 bitflags::bitflags! {
-    impl TileBinningFlags8: u8 {
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+    pub struct TileBinningFlags8: u8 {
         /// Enable Forward Facing Primitive
         const EnableForwardFacingPrimitive = 0x01;
 
@@ -35,11 +33,9 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct TileBinningFlags16(u16);
-
 bitflags::bitflags! {
-    impl TileBinningFlags16: u16 {
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+    pub struct TileBinningFlags16: u16 {
         /// Coverage Pipe Select
         const CoveragePipeSelect          = 0x0001;
 
@@ -96,11 +92,9 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct TileBinningModeFlags(u8);
-
 bitflags::bitflags! {
-    impl TileBinningModeFlags: u8 {
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+    pub struct TileBinningModeFlags: u8 {
         /// Multisample Mode (4X)
         const MultisampleMode4X = 0x01;
 
@@ -139,11 +133,9 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct IndexedPrimitiveListFlags(u8);
-
 bitflags::bitflags! {
-    impl IndexedPrimitiveListFlags: u8 {
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+    pub struct IndexedPrimitiveListFlags: u8 {
         /// Primitive Mode = Points
         const Points         = 0x00;
 

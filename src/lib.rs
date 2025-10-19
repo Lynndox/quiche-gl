@@ -1,6 +1,9 @@
 #![allow(unused)]
 #![cfg_attr(not(test), no_std)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 mod align;
 mod consts;
 mod context;
@@ -20,13 +23,16 @@ pub use context::*;
 pub use error::*;
 pub use framebuffer::*;
 
+use crate::mem::{ArmAddress, Physical};
+
 pub type Result<T, E = Error> = core::result::Result<T, E>;
 
 pub mod prelude {
     pub use super::display::*;
 }
 
-const VC_BUS_ADDR: u32 = 0x3FFFFFFF;
+const VC_BUS_ADDR: ArmAddress<Physical> = ArmAddress::new(0x3FFFFFFF);
+const PERIPHERAL_BASE: ArmAddress<Physical> = ArmAddress::new(0x3F00_0000);
 
 // pub fn bus_to_arm_addr(value: u32) -> usize {
 //     (value & VC_BUS_ADDR) as usize

@@ -1,26 +1,7 @@
-use crate::Align16;
-
-#[repr(transparent)]
-pub struct NvShaderState {
-    inner: Align16<NvShaderStateInner>,
-}
-
-impl core::ops::Deref for NvShaderState {
-    type Target = NvShaderStateInner;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl core::ops::DerefMut for NvShaderState {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
-}
+use crate::{Align16, align16, mem::BusAddress};
 
 #[repr(C, packed)]
-pub struct NvShaderStateInner {
+pub struct NvShaderState {
     /// Flag bits
     pub flags: NvShaderFlags,
     /// Shaded vertex data stride
@@ -30,16 +11,38 @@ pub struct NvShaderStateInner {
     /// Number of varying inputs to the fragment shader
     pub num_varyings: u8,
     /// Fragment shader code address
-    pub code_addr: u32,
+    pub code_addr: BusAddress,
     /// Fragment shader uniforms address
-    pub unif_addr: u32,
+    pub unif_addr: BusAddress,
     /// Shaded vertex data address
     ///
     /// # Note
     ///
     /// This must be 16-byte aligned if including clip coordinates in the
     /// header.
-    pub vert_data_addr: u32,
+    pub vert_data_addr: BusAddress,
+}
+
+impl NvShaderState {
+    pub fn new_aligned(
+        flags: NvShaderFlags,
+        stride: u8,
+        _num_uniforms: u8,
+        num_varyings: u8,
+        code_addr: BusAddress,
+        unif_addr: BusAddress,
+        vert_data_addr: BusAddress,
+    ) -> Align16<Self> {
+        align16!(Self {
+            flags,
+            stride,
+            _num_uniforms,
+            num_varyings,
+            code_addr,
+            unif_addr,
+            vert_data_addr,
+        })
+    }
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]

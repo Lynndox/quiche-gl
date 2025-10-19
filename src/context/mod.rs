@@ -1,14 +1,21 @@
+use core::cell::UnsafeCell;
+use core::fmt;
 use core::marker::PhantomData;
+use core::num::NonZeroU32;
+use core::pin::Pin;
 use core::ptr::NonNull;
 
 use crate::Align16;
 use crate::FrameBuffer;
+use crate::control_list::TileBinningControlList;
+use crate::control_list::fixed::RenderControlList;
 use crate::mailbox::messages::*;
 use crate::mailbox::raw::Mailbox;
 use crate::mailbox::raw::mailbox;
 use crate::mailbox::*;
 use crate::mem::volatile::VolatileRead;
 use crate::mem::*;
+use crate::register::*;
 use crate::{Result, display::Display, mem::mapper::*};
 
 mod error;
@@ -24,10 +31,8 @@ pub struct Context<S, M> {
     _state: S,
 }
 
-impl<S: core::fmt::Debug, M: core::fmt::Debug> core::fmt::Debug
-    for Context<S, M>
-{
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl<S: fmt::Debug, M: fmt::Debug> fmt::Debug for Context<S, M> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut debug_fmt = f.debug_struct("Context");
         debug_fmt
             .field("display", &self.display)
@@ -70,7 +75,7 @@ where
 {
     pub fn initialize(
         mut self,
-        num_buffers: u32,
+        num_buffers: NonZeroU32,
     ) -> Result<Context<Initialized, M>> {
         {
             let qpu_init_msg = InitQpu::message(250, false);
@@ -90,13 +95,7 @@ where
         let buf_addr = self.phys_to_virt_addr(buf_ptr)?;
 
         // TODO: should this be considered an error?
-        //
         // if buf_size == 0 {
-        //     // FIXME: i need to reorganize the error types anyway, so i
-        // can't be bothered to     // write one for this
-        //     // and really, i'm just going to be panicking in main at this
-        // point anyway
-        //
         //     panic!("recieved a framebuffer size of 0 from the GPU");
         // }
 
@@ -129,6 +128,58 @@ impl<M: MemoryMapper> Context<Initialized, M>
 where
     crate::Error: From<M::Error>,
 {
+    pub unsafe fn run_bin_control_list<'a, P>(
+        &'a self,
+        list: Pin<&'a TileBinningControlList<'a, P>>,
+    ) -> Result<()> {
+        let ptr = core::ptr::from_ref(list.get_ref());
+        unsafe {
+            V3D_CT0CA.write_volatile(ptr.addr() as u32);
+            V3D_CT0EA.write_volatile(
+                (ptr.addr() + core::mem::size_of_val(&*list)) as u32,
+            );
+
+            while V3D_BFC.read_volatile() == 0 {
+                core::hint::spin_loop();
+            }
+        }
+
+        Ok(())
+    }
+
+    pub unsafe fn run_render_control_list<
+        'a,
+        const W: usize,
+        const H: usize,
+    >(
+        &'a self,
+        list: Pin<&'a RenderControlList<W, H>>,
+    ) -> Result<()> {
+        let ptr = core::ptr::from_ref(list.get_ref());
+        unsafe {
+            V3D_CT0CA.write_volatile(ptr.addr() as u32);
+            V3D_CT0EA.write_volatile(
+                (ptr.addr() + core::mem::size_of_val(&*list)) as u32,
+            );
+
+            while V3D_BFC.read_volatile() == 0 {
+                core::hint::spin_loop();
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl<M: MemoryMapper> Context<Initialized, M>
+where
+    crate::Error: From<M::Error>,
+{
+    /// Returns a pointer to the raw underlying buffer for the current screen.
+    pub fn curr_screen_buffer_ptr(&mut self) -> *const u32 {
+        unsafe { self.framebuffer.curr_screen_buffer().as_ptr() }
+    }
+
     /// Returns a reference to the raw underlying buffer for the current screen.
     ///
     /// # Safety

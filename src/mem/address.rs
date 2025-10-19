@@ -1,5 +1,5 @@
 use core::{
-    marker::PhantomData,
+    marker::{PhantomData, PhantomPinned},
     ops::{BitOr, BitOrAssign, Deref, DerefMut},
 };
 
@@ -13,6 +13,7 @@ use crate::{VC_BUS_ADDR, mailbox::Channel};
 pub struct ArmAddress<A> {
     pub addr: usize,
     _phantom: PhantomData<A>,
+    _pin: PhantomPinned,
 }
 
 impl core::fmt::Debug for ArmAddress<Physical> {
@@ -36,6 +37,7 @@ impl<A> ArmAddress<A> {
         Self {
             addr,
             _phantom: PhantomData,
+            _pin: PhantomPinned,
         }
     }
 }
@@ -59,6 +61,7 @@ impl<A> From<usize> for ArmAddress<A> {
         Self {
             addr: value,
             _phantom: PhantomData,
+            _pin: PhantomPinned,
         }
     }
 }
@@ -74,19 +77,25 @@ pub struct Virtual;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct BusAddress(pub(crate) u32);
+pub struct BusAddress {
+    pub(crate) inner: u32,
+    _pin: PhantomPinned,
+}
 
 impl core::fmt::Debug for BusAddress {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_tuple("BusAddress")
-            .field(&format_args!("{:#010x}", self.0))
+            .field(&format_args!("{:#010x}", self.inner))
             .finish()
     }
 }
 
 impl BusAddress {
     pub const fn with_channel(mut self, channel: Channel) -> Self {
-        BusAddress((self.0 & !0xF) | channel as u32)
+        BusAddress {
+            inner: (self.inner & !0xF) | channel as u32,
+            _pin: PhantomPinned,
+        }
     }
 
     /// Creates an instance of self from a const pointer.
@@ -96,7 +105,10 @@ impl BusAddress {
     /// The caller must ensure that this is a **physical address**, along with
     /// all the other normal Rust memory safety guarantees.
     pub unsafe fn from_ptr<T>(ptr: *const T) -> Self {
-        Self((ptr as usize) as u32)
+        Self {
+            inner: (ptr as usize) as u32,
+            _pin: PhantomPinned,
+        }
     }
 }
 
@@ -104,30 +116,33 @@ impl Deref for BusAddress {
     type Target = u32;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.inner
     }
 }
 
 impl DerefMut for BusAddress {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+        &mut self.inner
     }
 }
 
 impl From<u32> for BusAddress {
     fn from(value: u32) -> Self {
-        Self(value)
+        Self {
+            inner: value,
+            _pin: PhantomPinned,
+        }
     }
 }
 
 impl From<BusAddress> for ArmAddress<Physical> {
     fn from(val: BusAddress) -> Self {
-        ArmAddress::new((val.0 & VC_BUS_ADDR) as usize)
+        ArmAddress::new((val.inner & (VC_BUS_ADDR.addr as u32)) as usize)
     }
 }
 
 impl From<ArmAddress<Physical>> for BusAddress {
     fn from(val: ArmAddress<Physical>) -> Self {
-        BusAddress(val.addr as u32 | !VC_BUS_ADDR)
+        BusAddress::from(val.addr as u32 | !(VC_BUS_ADDR.addr as u32))
     }
 }

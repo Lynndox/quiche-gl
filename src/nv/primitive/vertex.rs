@@ -35,10 +35,10 @@ impl<T: Clone> Clone for ShadedVertex<T> {
 
 impl<T: Copy> Copy for ShadedVertex<T> {}
 
-pub struct Color {
-    r: f32,
-    g: f32,
-    b: f32,
+pub struct VertexColor {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
 }
 
 #[repr(C, packed)]

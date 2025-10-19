@@ -1,4 +1,4 @@
-use core::ptr::NonNull;
+use core::{num::NonZeroU32, ptr::NonNull};
 
 #[derive(Debug)]
 pub struct FrameBuffer {
@@ -6,7 +6,7 @@ pub struct FrameBuffer {
     pub(crate) size: usize,
     pub(crate) screen_size: usize,
     pub(crate) curr_screen: usize,
-    pub(crate) num_buffers: u32,
+    pub(crate) num_buffers: NonZeroU32,
     pub(crate) width: u32,
     pub(crate) height: u32,
     pub(crate) bit_depth: u32,
@@ -26,7 +26,7 @@ impl FrameBuffer {
                 size: 0,
                 screen_size: 0,
                 curr_screen: 0,
-                num_buffers: 0,
+                num_buffers: NonZeroU32::new_unchecked(1),
                 width: 0,
                 height: 0,
                 bit_depth: 0,

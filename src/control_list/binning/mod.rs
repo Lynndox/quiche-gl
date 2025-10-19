@@ -1,10 +1,17 @@
 mod flags;
+use core::marker::PhantomData;
+
 pub use flags::*;
+
+use crate::{
+    mem::{ArmAddress, BusAddress, Physical},
+    nv::shader::NvShaderState,
+};
 
 use super::ControlCode;
 
 #[repr(C, packed)]
-pub struct TileBinningControlList<P: Primitive> {
+pub struct TileBinningControlList<'a, P> {
     bin_mode_config_code: u8,
     bin_mode_config: TileBinningModeConfig,
     start_tile_binning: u8,
@@ -17,18 +24,19 @@ pub struct TileBinningControlList<P: Primitive> {
     nv_shader_state_code: u8,
     nv_shader_state_addr: u32,
     primitives_code: u8,
-    primitives: P,
+    primitives_addr: u32,
     flush: u8,
+    _phantom: PhantomData<&'a P>,
 }
 
-impl<P: Primitive> TileBinningControlList<P> {
+impl<'a, P: Primitive> TileBinningControlList<'a, P> {
     pub fn new(
         bin_mode_config: TileBinningModeConfig,
         clip_window: ClipWindowConfig,
         bin_config: TileBinningConfig,
         viewport_offset: ViewportOffset,
-        nv_shader_state_addr: u32,
-        primitives: P,
+        nv_shader_state: ArmAddress<Physical>,
+        primitives: ArmAddress<Physical>,
     ) -> Self {
         Self {
             bin_mode_config_code: ControlCode::TileBinningModeConfiguration,
@@ -41,10 +49,11 @@ impl<P: Primitive> TileBinningControlList<P> {
             viewport_offset_code: ControlCode::ViewportOffset,
             viewport_offset,
             nv_shader_state_code: ControlCode::NVShaderState,
-            nv_shader_state_addr,
+            nv_shader_state_addr: nv_shader_state.addr as u32,
             primitives_code: P::FLAG,
-            primitives,
+            primitives_addr: primitives.addr as u32,
             flush: ControlCode::Flush,
+            _phantom: PhantomData,
         }
     }
 }
@@ -66,9 +75,9 @@ pub struct TileBinningModeConfig {
     /// (16-Byte Aligned, Size Of 48 Bytes * Num Tiles) (Bit 64..95)
     pub base_address: u32,
     /// Width (In Tiles) (Bit 96..103)
-    pub width: u8,
+    pub tile_width: u8,
     /// Height (In Tiles) (Bit 104..111)
-    pub height: u8,
+    pub tile_height: u8,
     /// Data Record (Bit 112..119)
     pub flags: TileBinningModeFlags,
 }

@@ -23,6 +23,7 @@ fixed = { workspace = true }
 glam = { workspace = true, optional = true }
 
 [features]
-default = ["glam"]
+default = ["alloc", "glam"]
+alloc = []
 glam = ["dep:glam"]
 glam-fast-math = ["glam/fast-math"]

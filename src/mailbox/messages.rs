@@ -1,3 +1,5 @@
+use core::num::NonZeroU32;
+
 use super::tag::*;
 use super::*;
 use crate::{Result, align16, mem::BusAddress};
@@ -33,13 +35,13 @@ impl InitFramebuffer {
         width: u32,
         height: u32,
         bit_depth: u32,
-        num_buffers: u32,
+        num_buffers: NonZeroU32,
     ) -> Self {
         const {
             assert!(core::mem::size_of::<Self>() <= (u32::MAX as usize));
         }
 
-        let virt_height = height * num_buffers;
+        let virt_height = height * num_buffers.get();
 
         Self {
             phys_display: SetPhysicalDisplay::new(width, height),
@@ -54,7 +56,7 @@ impl InitFramebuffer {
         width: u32,
         height: u32,
         bit_depth: u32,
-        num_buffers: u32,
+        num_buffers: NonZeroU32,
     ) -> Align16<MessageBatch<Self>> {
         MessageBatch::new_aligned(Self::new(
             width,
@@ -67,7 +69,7 @@ impl InitFramebuffer {
 
 impl InitFramebuffer {
     pub fn buffer_ptr(&self) -> BusAddress {
-        BusAddress(unsafe { self.alloc_buffer.base_addr.read() })
+        BusAddress::from(unsafe { self.alloc_buffer.base_addr.read() })
     }
 }
 
@@ -155,7 +157,9 @@ mod tests {
             0,
         ];
 
-        let msg = InitFramebuffer::message(640, 480, 32, 1);
+        let msg = unsafe {
+            InitFramebuffer::message(640, 480, 32, NonZeroU32::new_unchecked(1))
+        };
         assert_eq!(unsafe { msg.as_bytes() }, EXPECTED);
     }
 
